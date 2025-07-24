@@ -20,7 +20,7 @@
 - **Image enhancement**: Auto-cropping and contrast adjustment for better OCR
 
 ### 🏪 Intelligent Store Matching
-```mermaid
+
 graph TD
     A[User Upload] --> B(OCR Processing)
     B --> C[Item Extraction]
