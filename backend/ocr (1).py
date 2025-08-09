@@ -7,7 +7,7 @@ import re
 import numpy as np
 #ocr_upload in frontend,customerside
 # Set the tesseract executable path
-pytesseract.pytesseract.tesseract_cmd = r"D:\ocr\tesseract.exe" # Update path if needed
+pytesseract.pytesseract.tesseract_cmd = r"D:\New folder11\tesseract.exe" # Update path if needed
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True, resources={r"/*": {"origins": "*"}})  # Enable CORS for all routes
@@ -166,4 +166,4 @@ def find_items():
     })
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5001)

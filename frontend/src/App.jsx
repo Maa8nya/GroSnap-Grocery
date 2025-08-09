@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import "leaflet/dist/leaflet.css";
 
 import LandingPage from "./pages/Landing";
 import CustomerDashboard from "./pages/CustomerSide/CustomerDashboard";
@@ -8,28 +9,27 @@ import CustomerSignup from "./pages/CustomerSide/Register";
 import CustomerLogin from "./pages/CustomerSide/Login";
 import ShopkeeperRegister from "./pages/ShopkeeperSide/ShopkeeperRegister";
 import ShopkeeperLogin from "./pages/ShopkeeperSide/ShopkeeperLogin";
-import ShopkeeperManagement from "./pages/ShopkeeperSide/ShopkeeperManagement"; // ✅ Added
+import ShopkeeperManagement from "./pages/ShopkeeperSide/ShopkeeperManagement";
 import IntroGroSnap from "./pages/IntroGroSnap";
 
 function AppContent() {
-  const location = useLocation();
-  const [showIntro, setShowIntro] = useState(() => {
-    return localStorage.getItem("introShown") !== "true";
-  });
+  const [showIntro, setShowIntro] = useState(true);
 
   useEffect(() => {
-    if (location.pathname !== "/" && showIntro) {
-      setShowIntro(false);
-      localStorage.setItem("introShown", "true");
+    if (showIntro) {
+      // If intro has animation, keep it for a few seconds
+      const timer = setTimeout(() => {
+        setShowIntro(false);
+      }, 3000); // adjust time as needed
+      return () => clearTimeout(timer);
     }
-  }, [location, showIntro]);
+  }, [showIntro]);
 
   if (showIntro) {
     return (
       <IntroGroSnap
         onFinish={() => {
           setShowIntro(false);
-          localStorage.setItem("introShown", "true");
         }}
       />
     );
@@ -49,7 +49,7 @@ function AppContent() {
       <Route path="/shopkeeper" element={<ShopkeeperDashboard />} />
       <Route path="/shopkeeper/register" element={<ShopkeeperRegister />} />
       <Route path="/shopkeeper/login" element={<ShopkeeperLogin />} />
-      <Route path="/shopkeeper/manage" element={<ShopkeeperManagement />} /> {/* ✅ Added */}
+      <Route path="/shopkeeper/manage" element={<ShopkeeperManagement />} />
     </Routes>
   );
 }
