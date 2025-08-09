@@ -52,9 +52,33 @@ const ShopkeeperRegister = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Handle registration logic here
-    console.log('Form submitted:', formData);
-    navigate('/shopkeeper');
+    
+    // Basic validation
+    if (formData.password !== formData.confirmPassword) {
+      alert("Passwords don't match!");
+      return;
+    }
+    
+    if (!formData.agreeTerms) {
+      alert("You must agree to the terms and conditions");
+      return;
+    }
+
+    // In a real app, you would send the data to your backend API here
+    console.log('Registration data:', formData);
+    
+    // Store shopkeeper data in localStorage (simulating registration)
+    localStorage.setItem('shopkeeperRegistered', 'true');
+    localStorage.setItem('shopkeeperData', JSON.stringify({
+      name: formData.name,
+      email: formData.email,
+      shopName: formData.shopName,
+      shopAddress: formData.shopAddress,
+      phone: formData.phone
+    }));
+    
+    // Navigate to the management page
+    navigate('/shopkeeper/manage');
   };
 
   return (
