@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Box, Typography, Button, TextField, Card, CardContent,
-  Chip, IconButton, Dialog, DialogContent, DialogTitle
+  Chip, IconButton, Dialog, DialogContent, DialogTitle, DialogActions
 } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import customerTheme from '../../themes/customerTheme';
@@ -10,31 +10,50 @@ import { ShoppingCart, Search, Store, ListAlt, AccountCircle } from '@mui/icons-
 import NearbyStores from './NearbyStores';
 import OCRUpload from './ocr_upload';
 
+
 const CustomerDashboard = () => {
   const [activeTab, setActiveTab] = useState('stores');
   const [searchQuery, setSearchQuery] = useState('');
   const [showMapView, setShowMapView] = useState(false);
   const [showOCRUpload, setShowOCRUpload] = useState(false);
+  const [showNotepadDialog, setShowNotepadDialog] = useState(false);
+  const [notepadText, setNotepadText] = useState('');
   const [lists, setLists] = useState([]);
 
-  const handleCreateNewList = () => {
+  // Open Dialog to create typed list (in-app notepad)
+  const handleOpenNotepad = () => {
+    setNotepadText(''); // reset
+    setShowNotepadDialog(true);
+  };
+
+  // Save typed list, parse lines, and add to lists (same behaviour as OCR)
+  const handleSaveNotepad = () => {
+    const items = notepadText
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
+
     const newList = {
       id: Date.now(),
       name: `Grocery List ${lists.length + 1}`,
-      items: [],
+      items,
       createdAt: new Date().toISOString()
     };
-    setLists([...lists, newList]);
+
+    setLists(prev => [...prev, newList]);
+    setShowNotepadDialog(false);
+    setNotepadText('');
   };
 
   const handleOCRSuccess = (text) => {
+    const items = text.split('\n').map(l => l.trim()).filter(l => l);
     const newList = {
       id: Date.now(),
       name: `OCR List ${lists.length + 1}`,
-      items: text.split('\n').filter(item => item.trim()),
+      items,
       createdAt: new Date().toISOString()
     };
-    setLists([...lists, newList]);
+    setLists(prev => [...prev, newList]);
     setShowOCRUpload(false);
   };
 
@@ -47,7 +66,7 @@ const CustomerDashboard = () => {
             <Typography variant="h6" fontWeight="bold">GroSnap</Typography>
             <Box sx={{ display: 'flex', gap: 2 }}>
               <IconButton color="inherit"><ShoppingCart /></IconButton>
-              <IconButton color="inherit"><AccountCircle /></IconButton>
+               <IconButton color="inherit"><AccountCircle /></IconButton>
             </Box>
           </Box>
         </Box>
@@ -188,7 +207,7 @@ const CustomerDashboard = () => {
                   <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
                     You haven't created any lists yet
                   </Typography>
-                  <Button variant="contained" startIcon={<ListAlt />} onClick={handleCreateNewList} sx={{ mb: 2 }}>
+                  <Button variant="contained" startIcon={<ListAlt />} onClick={handleOpenNotepad} sx={{ mb: 2 }}>
                     Create New List
                   </Button>
                   <Button variant="outlined" onClick={() => setShowOCRUpload(true)}>
@@ -209,6 +228,35 @@ const CustomerDashboard = () => {
               <Button variant="outlined" onClick={() => setShowOCRUpload(false)} sx={{ mr: 2 }}>Cancel</Button>
             </Box>
           </DialogContent>
+        </Dialog>
+
+        {/* In-app Notepad Dialog (typed lists) */}
+        <Dialog open={showNotepadDialog} onClose={() => setShowNotepadDialog(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>Create Grocery List</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              Type each item on a new line. Click Save to parse and add this list.
+            </Typography>
+            <TextField
+              value={notepadText}
+              onChange={(e) => setNotepadText(e.target.value)}
+              placeholder="e.g. 1. Milk&#10;2. Eggs&#10;3. Bread"
+              multiline
+              minRows={10}
+              fullWidth
+              variant="outlined"
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setShowNotepadDialog(false)}>Cancel</Button>
+            <Button
+              variant="contained"
+              onClick={handleSaveNotepad}
+              disabled={notepadText.trim().length === 0}
+            >
+              Save
+            </Button>
+          </DialogActions>
         </Dialog>
       </Box>
     </ThemeProvider>

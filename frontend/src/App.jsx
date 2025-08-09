@@ -11,6 +11,8 @@ import ShopkeeperRegister from "./pages/ShopkeeperSide/ShopkeeperRegister";
 import ShopkeeperLogin from "./pages/ShopkeeperSide/ShopkeeperLogin";
 import ShopkeeperManagement from "./pages/ShopkeeperSide/ShopkeeperManagement";
 import IntroGroSnap from "./pages/IntroGroSnap";
+import GroceryCategories from "./pages/CustomerSide/Grocery";
+import CustomerProfile from "./pages/CustomerSide/CustomerProfile";
 
 function AppContent() {
   const [showIntro, setShowIntro] = useState(true);
@@ -44,12 +46,16 @@ function AppContent() {
       <Route path="/customer/dashboard" element={<CustomerDashboard />} />
       <Route path="/customer/signup" element={<CustomerSignup />} />
       <Route path="/customer/login" element={<CustomerLogin />} />
+      <Route path="/customer/Grocery" element={<GroceryCategories />} />
+      <Route path="/customer/profile" element={<CustomerProfile />} />
 
       {/* Shopkeeper */}
       <Route path="/shopkeeper" element={<ShopkeeperDashboard />} />
       <Route path="/shopkeeper/register" element={<ShopkeeperRegister />} />
       <Route path="/shopkeeper/login" element={<ShopkeeperLogin />} />
       <Route path="/shopkeeper/manage" element={<ShopkeeperManagement />} />
+      
+      
     </Routes>
   );
 }
