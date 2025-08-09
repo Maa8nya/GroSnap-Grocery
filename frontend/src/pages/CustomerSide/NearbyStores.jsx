@@ -1,32 +1,26 @@
 import React, { useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import './fixleafleticons'; // Fixes Leaflet marker icon path issue
-//feteched nearby stores (necessaryfixleafleticons)
+import './fixleafleticons';
+
 function NearbyStores() {
   const [location, setLocation] = useState(null);
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Haversine formula to calculate distance in km
   const getDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371; // Earth's radius in km
-    const toRad = (deg) => (deg * Math.PI) / 180;
-
-    const dLat = toRad(lat2 - lat1);
-    const dLon = toRad(lon2 - lon1);
-
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
     const a =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-      Math.sin(dLon / 2) ** 2;
-
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c; // Return as number in km (not fixed string)
+    return R * c;
   };
 
-  // Convert km to walking time in minutes (5 km/h walking speed)
   const kmToMinutes = (km) => Math.round((km / 5) * 60);
 
   const fetchStores = async (lat, lon) => {
@@ -37,56 +31,43 @@ function NearbyStores() {
     const query = `
       [out:json][timeout:25];
       (
-        node["shop"~"convenience|grocery|supermarket|general|store|bhandaar|departmental|bhandar|provision|stores"](around:${radius},${lat},${lon});
-        way["shop"~"convenience|grocery|supermarket|general|store|bhandaar|angadi|departmental|bhandar|provision|stores"](around:${radius},${lat},${lon});
+        node["shop"~"convenience|grocery|supermarket"](around:${radius},${lat},${lon});
+        way["shop"~"convenience|grocery|supermarket"](around:${radius},${lat},${lon});
       );
       out center;
     `;
-    const body = {
-    query,
-    user_lat: lat,
-    user_lon: lon,
-  };
 
     try {
-      const res = await fetch('http://localhost:5001/api/overpass', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) throw new Error(`Server error: ${res.status}`);
-      const data = await res.json();
+      const response = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
+      const data = await response.json();
 
       const parsedStores = data.elements
-        .map((el) => {
-          const latStore = el.lat ?? el.center?.lat ?? null;
-          const lonStore = el.lon ?? el.center?.lon ?? null;
-          if (latStore === null || lonStore === null) return null;
+        .map(el => {
+          const latStore = el.lat ?? el.center?.lat;
+          const lonStore = el.lon ?? el.center?.lon;
+          if (!latStore || !lonStore) return null;
 
           return {
             id: el.id,
             name: el.tags?.name || 'Unnamed Store',
-            type: el.tags?.shop || 'unknown',
+            type: el.tags?.shop || 'store',
             lat: latStore,
             lon: lonStore,
-            distance: getDistance(lat, lon, latStore, lonStore),
+            distance: getDistance(lat, lon, latStore, lonStore)
           };
         })
         .filter(Boolean)
-        .sort((a, b) => a.distance - b.distance); // Sort by nearest first
+        .sort((a, b) => a.distance - b.distance);
 
-      console.log('✅ Parsed stores:', parsedStores);
       setStores(parsedStores);
-    } catch (e) {
-      setError(e.message);
+    } catch (err) {
+      setError('Failed to fetch stores. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   const locateUser = () => {
-    setError('');
     if (!navigator.geolocation) {
       setError('Geolocation is not supported by your browser');
       return;
@@ -96,72 +77,176 @@ function NearbyStores() {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        console.log('📍 User location:', latitude, longitude);
         setLocation({ lat: latitude, lon: longitude });
         fetchStores(latitude, longitude);
       },
       (err) => {
+        setError(err.message);
         setLoading(false);
-        setError(`Geolocation error: ${err.message}`);
       }
     );
   };
 
   return (
-    <div style={{ padding: '1rem' }}>
-      <button onClick={locateUser} disabled={loading}>
-        {loading ? 'Loading...' : 'Find Nearby Stores'}
-      </button>
+    <div style={{
+      maxWidth: '1200px',
+      margin: '0 auto',
+      padding: '20px',
+      fontFamily: 'Arial, sans-serif',
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100vh'
+    }}>
+      <h1 style={{ textAlign: 'center', marginBottom: '30px' }}>Nearby Stores</h1>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        marginBottom: '20px'
+      }}>
+        <button
+          onClick={locateUser}
+          disabled={loading}
+          style={{
+            backgroundColor: '#4CAF50',
+            color: 'white',
+            padding: '12px 24px',
+            border: 'none',
+            borderRadius: '4px',
+            fontSize: '16px',
+            cursor: 'pointer',
+            boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+            transition: 'background-color 0.3s'
+          }}
+        >
+          {loading ? 'Searching...' : 'Find Nearby Stores'}
+        </button>
+      </div>
 
-      {location && (
-        <>
-          <MapContainer
-            center={[location.lat, location.lon]}
-            zoom={15}
-            style={{ height: '400px', marginTop: '1rem' }}
-            key={`${location.lat}-${location.lon}`}
-          >
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            <Marker position={[location.lat, location.lon]}>
-              <Popup>Your Location</Popup>
-            </Marker>
-
-            {stores.map((store) => (
-              <Marker key={store.id} position={[store.lat, store.lon]}>
-                <Popup>
-                  <b>{store.name}</b>
-                  <br />
-                  {store.type}
-                </Popup>
-              </Marker>
-            ))}
-          </MapContainer>
-
-          <div style={{
-            maxHeight: '200px',
-            overflowY: 'auto',
-            marginTop: '1rem',
-            padding: '1rem',
-            border: '1px solid #ddd',
-            borderRadius: '8px',
-            backgroundColor: '#f9f9f9'
-          }}>
-            <h4>📍 Nearby Stores ({stores.length})</h4>
-            {stores.length === 0 && <p>No stores found nearby.</p>}
-            <ul style={{ listStyleType: 'none', paddingLeft: 0 }}>
-              {stores.map((store) => (
-                <li key={store.id} style={{ marginBottom: '0.5rem' }}>
-                  <b>{store.name}</b> ({store.type}) – {store.distance.toFixed(2)} km away (~{kmToMinutes(store.distance)} min walk)
-                </li>
-              ))}
-            </ul>
-          </div>
-        </>
+      {error && (
+        <div style={{
+          backgroundColor: '#ffebee',
+          color: '#d32f2f',
+          padding: '15px',
+          borderRadius: '4px',
+          marginBottom: '20px',
+          textAlign: 'center'
+        }}>
+          {error}
+        </div>
       )}
 
-      {!location && !loading && <p>Click "Find Nearby Stores" to start</p>}
+      {location && (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          flex: 1,
+          gap: '20px'
+        }}>
+          {/* Map Container */}
+          <div style={{
+            height: '400px',
+            width: '100%',
+            borderRadius: '8px',
+            overflow: 'hidden',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+          }}>
+            <MapContainer
+              center={[location.lat, location.lon]}
+              zoom={15}
+              style={{ height: '100%', width: '100%' }}
+            >
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              />
+              <Marker position={[location.lat, location.lon]}>
+                <Popup>Your Location</Popup>
+              </Marker>
+              {stores.map(store => (
+                <Marker key={store.id} position={[store.lat, store.lon]}>
+                  <Popup>
+                    <div>
+                      <h4 style={{ margin: '5px 0' }}>{store.name}</h4>
+                      <p style={{ margin: '5px 0' }}>{store.type}</p>
+                      <p style={{ margin: '5px 0' }}>
+                        {store.distance.toFixed(2)} km away
+                      </p>
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
+            </MapContainer>
+          </div>
+
+          {/* Horizontal Scrollable Store Cards */}
+          <div style={{
+            padding: '10px 0',
+            overflowX: 'auto',
+            whiteSpace: 'nowrap',
+            borderTop: '1px solid #ddd'
+          }}>
+            <h2 style={{
+              marginBottom: '10px',
+              paddingLeft: '10px'
+            }}>
+              📍 Nearby Stores ({stores.length})
+            </h2>
+
+            {stores.length > 0 ? (
+              <div style={{
+                display: 'flex',
+                gap: '15px',
+                padding: '10px',
+                minHeight: '150px'
+              }}>
+                {stores.map(store => (
+                  <div key={store.id} style={{
+                    minWidth: '220px',
+                    backgroundColor: 'white',
+                    borderRadius: '8px',
+                    padding: '15px',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+                    display: 'inline-block',
+                    whiteSpace: 'normal'
+                  }}>
+                    <h3 style={{ margin: '0 0 5px', color: '#2E7D32' }}>{store.name}</h3>
+                    <p style={{ margin: '5px 0', color: '#555' }}>{store.type}</p>
+                    <p style={{ margin: '5px 0' }}>🚶‍♂️ ~{kmToMinutes(store.distance)} min</p>
+                    <p style={{ margin: '0', fontWeight: 'bold' }}>{store.distance.toFixed(2)} km</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{
+                backgroundColor: '#E3F2FD',
+                padding: '20px',
+                borderRadius: '8px',
+                textAlign: 'center'
+              }}>
+                <p style={{ margin: 0 }}>No stores found in your area.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {!location && !loading && (
+        <div style={{
+          backgroundColor: '#f5f5f5',
+          padding: '30px',
+          borderRadius: '8px',
+          textAlign: 'center',
+          marginTop: '30px'
+        }}>
+          <p style={{ fontSize: '18px' }}>
+            Click "Find Nearby Stores" to discover shops near your location
+          </p>
+          <p style={{ color: '#666' }}>
+            We'll search within an 8 km radius for grocery stores and supermarkets
+          </p>
+        </div>
+      )}
     </div>
   );
 }
