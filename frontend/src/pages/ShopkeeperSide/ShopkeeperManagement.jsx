@@ -6,7 +6,8 @@ import {
   TextField, Grid, Tabs, Tab, Paper, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, IconButton, Dialog, DialogTitle,
   DialogContent, DialogActions, CircularProgress, Snackbar, Alert,
-  List, ListItem, ListItemText, Divider, Chip, Avatar, Badge
+  List, ListItem, ListItemText, Divider, Chip, Avatar, Badge,
+  Select, MenuItem, InputLabel, FormControl
 } from '@mui/material';
 import {
   Edit as EditIcon, Add as AddIcon, Delete as DeleteIcon,
@@ -14,7 +15,8 @@ import {
   Check as CheckIcon, Close as CloseIcon, Phone as PhoneIcon,
   LocalShipping as ShippingIcon, ShoppingCart as CartIcon,
   AttachMoney as MoneyIcon, Category as CategoryIcon,
-  Numbers as NumbersIcon, Warehouse as WarehouseIcon
+  Numbers as NumbersIcon, Warehouse as WarehouseIcon,
+  CloudUpload as CloudUploadIcon
 } from '@mui/icons-material';
 import { ThemeProvider, alpha } from '@mui/material/styles';
 import shopkeeperTheme from '../../themes/shopkeeperTheme';
@@ -54,7 +56,8 @@ const ShopkeeperManagement = () => {
     name: '', 
     price: '', 
     stock: '', 
-    category: '' 
+    category: '',
+    image: null
   });
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openAddDialog, setOpenAddDialog] = useState(false);
@@ -65,6 +68,17 @@ const ShopkeeperManagement = () => {
     severity: 'success'
   });
 
+  const categories = [
+    'Fruits',
+    'Vegetables',
+    'Dairy',
+    'Bakery',
+    'Meat',
+    'Beverages',
+    'Snacks',
+    'Household'
+  ];
+
   useEffect(() => {
     const isAuthenticated = localStorage.getItem('shopkeeperRegistered');
     if (!isAuthenticated) {
@@ -74,9 +88,9 @@ const ShopkeeperManagement = () => {
 
     const timer = setTimeout(() => {
       setProducts([
-        { id: 1, name: 'Organic Apples', price: 224.25, stock: 50, category: 'Fruits' },
-        { id: 2, name: 'Whole Wheat Bread', price: 261.75, stock: 30, category: 'Bakery' },
-        { id: 3, name: 'Free Range Eggs', price: 374.25, stock: 20, category: 'Dairy' },
+        { id: 1, name: 'Organic Apples', price: 224.25, stock: 50, category: 'Fruits', image: null },
+        { id: 2, name: 'Whole Wheat Bread', price: 261.75, stock: 30, category: 'Bakery', image: null },
+        { id: 3, name: 'Free Range Eggs', price: 374.25, stock: 20, category: 'Dairy', image: null },
       ]);
       setLoading(false);
     }, 1500);
@@ -104,6 +118,17 @@ const ShopkeeperManagement = () => {
     showSnackbar('Product updated successfully!', 'success');
   };
 
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewProduct({...newProduct, image: reader.result});
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleAddProduct = () => {
     if (!newProduct.name || !newProduct.price || !newProduct.stock || !newProduct.category) {
       showSnackbar('Please fill all fields', 'error');
@@ -119,7 +144,7 @@ const ShopkeeperManagement = () => {
     };
     
     setProducts([...products, productToAdd]);
-    setNewProduct({ name: '', price: '', stock: '', category: '' });
+    setNewProduct({ name: '', price: '', stock: '', category: '', image: null });
     setOpenAddDialog(false);
     showSnackbar('Product added successfully!', 'success');
   };
@@ -859,17 +884,21 @@ const ShopkeeperManagement = () => {
                 />
               </Grid>
               <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Category"
-                  value={editingProduct?.category || ''}
-                  onChange={(e) => setEditingProduct({...editingProduct, category: e.target.value})}
-                  InputProps={{
-                    startAdornment: (
-                      <CategoryIcon color="primary" sx={{ mr: 1 }} />
-                    )
-                  }}
-                />
+                <FormControl fullWidth>
+                  <InputLabel id="edit-category-select-label">Category</InputLabel>
+                  <Select
+                    labelId="edit-category-select-label"
+                    value={editingProduct?.category || ''}
+                    label="Category"
+                    onChange={(e) => setEditingProduct({...editingProduct, category: e.target.value})}
+                  >
+                    {categories.map((category) => (
+                      <MenuItem key={category} value={category}>
+                        {category}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </Grid>
             </Grid>
           </DialogContent>
@@ -899,7 +928,10 @@ const ShopkeeperManagement = () => {
         {/* Add Product Dialog */}
         <Dialog 
           open={openAddDialog} 
-          onClose={() => setOpenAddDialog(false)}
+          onClose={() => {
+            setOpenAddDialog(false);
+            setNewProduct({ name: '', price: '', stock: '', category: '', image: null });
+          }}
           fullWidth
           maxWidth="sm"
         >
@@ -926,6 +958,65 @@ const ShopkeeperManagement = () => {
                   }}
                 />
               </Grid>
+              
+              {/* Image Upload Section - Fixed Alignment */}
+              <Grid item xs={12}>
+                <Box 
+                  sx={{
+                    border: '1px dashed',
+                    borderColor: shopkeeperTheme.palette.primary.main,
+                    borderRadius: 2,
+                    p: 3,
+                    textAlign: 'center',
+                    backgroundColor: alpha(shopkeeperTheme.palette.primary.main, 0.05),
+                    cursor: 'pointer',
+                    '&:hover': {
+                      backgroundColor: alpha(shopkeeperTheme.palette.primary.main, 0.1)
+                    }
+                  }}
+                  component="label"
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    style={{ display: 'none' }}
+                  />
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    {newProduct.image ? (
+                      <>
+                        <img 
+                          src={newProduct.image} 
+                          alt="Product Preview" 
+                          style={{ 
+                            maxWidth: '100%', 
+                            maxHeight: '150px',
+                            borderRadius: '8px',
+                            marginBottom: '8px'
+                          }} 
+                        />
+                        <Typography variant="body2">
+                          Click to change image
+                        </Typography>
+                      </>
+                    ) : (
+                      <>
+                        <CloudUploadIcon 
+                          color="primary" 
+                          sx={{ fontSize: 40, mb: 1 }} 
+                        />
+                        <Typography variant="body1" color="primary">
+                          Upload Product Image
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Drag & drop or click to browse
+                        </Typography>
+                      </>
+                    )}
+                  </Box>
+                </Box>
+              </Grid>
+              
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
@@ -955,23 +1046,30 @@ const ShopkeeperManagement = () => {
                 />
               </Grid>
               <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Category"
-                  value={newProduct.category}
-                  onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
-                  InputProps={{
-                    startAdornment: (
-                      <CategoryIcon color="primary" sx={{ mr: 1 }} />
-                    )
-                  }}
-                />
+                <FormControl fullWidth>
+                  <InputLabel id="category-select-label">Category</InputLabel>
+                  <Select
+                    labelId="category-select-label"
+                    value={newProduct.category}
+                    label="Category"
+                    onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
+                  >
+                    {categories.map((category) => (
+                      <MenuItem key={category} value={category}>
+                        {category}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </Grid>
             </Grid>
           </DialogContent>
           <DialogActions sx={{ p: 3 }}>
             <Button 
-              onClick={() => setOpenAddDialog(false)}
+              onClick={() => {
+                setOpenAddDialog(false);
+                setNewProduct({ name: '', price: '', stock: '', category: '', image: null });
+              }}
               variant="outlined"
               sx={{ mr: 2 }}
             >
