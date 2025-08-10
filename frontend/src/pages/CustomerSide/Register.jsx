@@ -3,6 +3,9 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 
+import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import { collection, doc, setDoc } from "firebase/firestore";
+import { db,auth } from '../../../firebase.js';  // Make sure your firebase.js exports Firestore db
 
 const Register = () => {
   const navigate = useNavigate();
@@ -24,17 +27,42 @@ const Register = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  // (Optional) Add form validation here
+    if (!formData.agreeTerms) {
+      alert("You must agree to the Terms of Service and Privacy Policy.");
+      return;
+    }
 
-  console.log(formData); // Simulate registration logic
+    if (formData.password !== formData.confirmPassword) {
+      alert("Passwords do not match!");
+      return;
+    }
 
-  // Navigate to the customer dashboard
-  navigate('/customer/dashboard');
-};
+    try {
+      // Create user in Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      const user = userCredential.user;
 
+      // Save additional info to Firestore
+      await setDoc(doc(db, "users", user.uid), {
+  uid: user.uid,
+  firstName: formData.firstName,
+  lastName: formData.lastName,
+  email: formData.email,
+  phone: formData.phone,
+  createdAt: new Date()
+});
+
+      // Navigate to dashboard
+      navigate('/customer/dashboard');
+    } catch (error) {
+  console.error("Error registering user:", error);
+  alert(`Failed to register user: ${error.message}`);
+  }
+
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 to-amber-50 flex items-center justify-center p-4">
@@ -191,16 +219,14 @@ const Register = () => {
               </div>
             </div>
 
-          <motion.button
-            type="submit"
-            onClick={handleSubmit}
-            whileHover={{ scale: 1.02, boxShadow: "0 5px 15px rgba(244, 63, 94, 0.3)" }}
-            whileTap={{ scale: 0.98 }}
-            className="w-full py-3 px-4 bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold rounded-lg shadow hover:shadow-md transition-all"
-          >
-            Create Account
-          </motion.button>
-
+            <motion.button
+              type="submit"
+              whileHover={{ scale: 1.02, boxShadow: "0 5px 15px rgba(244, 63, 94, 0.3)" }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full py-3 px-4 bg-gradient-to-r from-rose-500 to-amber-500 text-white font-semibold rounded-lg shadow hover:shadow-md transition-all"
+            >
+              Create Account
+            </motion.button>
           </form>
 
           <div className="mt-6">
