@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import './fixleafleticons';
@@ -7,7 +7,7 @@ import { collection, getDocs } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 
 function NearbyStores() {
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
   const [location, setLocation] = useState(null);
   const [stores, setStores] = useState([]);
   const [firestoreStores, setFirestoreStores] = useState([]);
@@ -57,7 +57,6 @@ function NearbyStores() {
 
       if (!data.elements || data.elements.length === 0) {
         console.warn(`No stores found within ${radius / 1000} km`);
-        // Retry with bigger radius if first attempt
         if (radius === 8000) {
           console.log("Retrying with 15 km radius...");
           return fetchStores(lat, lon, 15000);
@@ -134,19 +133,13 @@ function NearbyStores() {
   };
 
   const handleShopNow = (storeId) => {
-    // Implement your shop now logic here
     navigate('/customer/Grocery', { 
-      state: { storeId } // You can pass the store ID or other data
+      state: { storeId }
     });
-    // Example: navigate to store page or open shopping interface
-    // window.location.href = `/store/${storeId}`;
   };
 
   const handleContact = (storeId, storeName) => {
-    // Implement your contact logic here
     console.log(`Contact clicked for store ${storeName} (${storeId})`);
-    // Example: open contact modal or dial phone number
-    // window.open(`tel:${storePhoneNumber}`);
   };
 
   return (
@@ -259,22 +252,17 @@ function NearbyStores() {
                           <button
                             onClick={() => handleShopNow(store.id)}
                             style={{
-                              backgroundColor: '#4CAF50',
+                              backgroundColor: '#e11d48',
                               color: 'white',
-                              padding: '8px 16px',
+                              padding: '5px 10px',
                               border: 'none',
                               borderRadius: '4px',
                               fontSize: '14px',
                               cursor: 'pointer',
-                              marginTop: '10px',
-                              width: '100%',
-                              transition: 'background-color 0.3s',
-                              ':hover': {
-                                backgroundColor: '#3e8e41'
-                              }
+                              marginTop: '5px'
                             }}
                           >
-                            🛒 Shop Now
+                            Shop Now
                           </button>
                         </div>
                       </Popup>
@@ -325,7 +313,7 @@ function NearbyStores() {
                       <button
                         onClick={() => handleShopNow(store.id)}
                         style={{
-                          backgroundColor: '#4CAF50',
+                          backgroundColor: '#e11d48',
                           color: 'white',
                           padding: '8px 16px',
                           border: 'none',
@@ -336,7 +324,7 @@ function NearbyStores() {
                           width: '100%',
                           transition: 'background-color 0.3s',
                           ':hover': {
-                            backgroundColor: '#3e8e41'
+                            backgroundColor: '#be123c'
                           }
                         }}
                       >
@@ -399,101 +387,17 @@ function NearbyStores() {
                     </button>
                   </div>
                 ))}
-                {firestoreStores.map(store => (
-                  store.latitude && store.longitude && (
-                    <Marker key={store.id} position={[store.latitude, store.longitude]}>
-                      <Popup>
-                        <div>
-                          <h4 style={{ margin: '5px 0' }}>{store.shopName}</h4>
-                          <p style={{ margin: '5px 0' }}>{store.shopAddress}</p>
-                          {/* optionally add distance */}
-                        </div>
-                      </Popup>
-                    </Marker>
-                  )
-                ))}
-              
-            </div>
-
-              {/* Horizontal Scrollable Store Cards */}
-            <div style={{
-              padding: '10px 0',
-              overflowX: 'auto',
-              whiteSpace: 'nowrap',
-              borderTop: '1px solid #ddd'
-            }}>
-              <h2 style={{
-                marginBottom: '10px',
-                paddingLeft: '10px'
+              </div>
+            ) : (
+              <div style={{
+                backgroundColor: '#E3F2FD',
+                padding: '20px',
+                borderRadius: '8px',
+                textAlign: 'center'
               }}>
-                📍 Nearby Stores ({stores.length})
-              </h2>
-
-              {stores.length > 0 ? (
-                <div style={{
-                  display: 'flex',
-                  gap: '15px',
-                  padding: '10px',
-                  minHeight: '150px'
-                }}>
-                  {stores.map(store => (
-                    <div key={store.id} style={{
-                      minWidth: '220px',
-                      backgroundColor: 'white',
-                      borderRadius: '8px',
-                      padding: '15px',
-                      boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
-                      display: 'inline-block',
-                      whiteSpace: 'normal'
-                    }}>
-                      <h3 style={{ margin: '0 0 5px', color: '#2E7D32' }}>{store.name}</h3>
-                      <p style={{ margin: '5px 0', color: '#555' }}>{store.type}</p>
-                      <p style={{ margin: '5px 0' }}>🚶‍♂️ ~{kmToMinutes(store.distance)} min</p>
-                      <p style={{ margin: '0', fontWeight: 'bold' }}>{store.distance.toFixed(2)} km</p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div style={{
-                  backgroundColor: '#E3F2FD',
-                  padding: '20px',
-                  borderRadius: '8px',
-                  textAlign: 'center'
-                }}>
-                  <p style={{ margin: 0 }}>No stores found in your area.</p>
-                </div>
-              )}
-
-              {/* Firestore registered stores list */}
-              <h2 style={{ marginTop: 30, paddingLeft: 10 }}>
-                🏪 Registered Stores ({firestoreStores.length})
-              </h2>
-              {loadingFirestore && <p>Loading registered stores...</p>}
-              {!loadingFirestore && firestoreStores.length === 0 && <p>No registered stores found.</p>}
-              {!loadingFirestore && firestoreStores.length > 0 && (
-                <div style={{
-                  display: 'flex',
-                  gap: '15px',
-                  padding: '10px',
-                  overflowX: 'auto'
-                }}>
-                  {firestoreStores.map(store => (
-                    <div key={store.id} style={{
-                      minWidth: '220px',
-                      backgroundColor: 'white',
-                      borderRadius: '8px',
-                      padding: '15px',
-                      boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
-                      display: 'inline-block',
-                      whiteSpace: 'normal'
-                    }}>
-                      <h3 style={{ margin: '0 0 5px', color: '#2E7D32' }}>{store.shopName}</h3>
-                      <p style={{ margin: '5px 0', color: '#555' }}>{store.shopAddress}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                <p style={{ margin: 0 }}>No stores found in your area.</p>
+              </div>
+            )}
           </div>
         </>
       )}

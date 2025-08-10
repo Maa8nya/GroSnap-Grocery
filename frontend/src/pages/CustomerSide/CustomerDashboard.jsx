@@ -9,12 +9,7 @@ import customerTheme from '../../themes/customerTheme';
 import { ShoppingCart, Search, Store, ListAlt, AccountCircle, ArrowBack } from '@mui/icons-material';
 import NearbyStores from './NearbyStores';
 import OCRUpload from './ocr_upload';
-<<<<<<< HEAD
 import RecommendedStores from './RecommendedStores';
-=======
-import { db } from '../../../firebase';
-import { collection, getDocs } from 'firebase/firestore';
->>>>>>> ae36d8ceeac87483c1976b210a326e298bae017b
 
 const CustomerDashboard = () => {
   const [activeTab, setActiveTab] = useState('stores');
@@ -163,7 +158,6 @@ const CustomerDashboard = () => {
         <Box sx={{ p: 2, maxWidth: '1200px', mx: 'auto' }}>
           {showRecommendedStores ? (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
-<<<<<<< HEAD
             
               
               {/* Recommended stores content */}
@@ -171,82 +165,6 @@ const CustomerDashboard = () => {
               
                       <RecommendedStores />
                     
-=======
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h5" sx={{ fontWeight: 'bold' }}>Nearby Stores</Typography>
-                <Button
-                  variant="outlined"
-                  onClick={() => setShowMapView(prev => !prev)}
-                  startIcon={<Store />}
-                  sx={{
-                    color: 'primary.main',
-                    borderColor: 'primary.main',
-                    '&:hover': { borderColor: 'primary.dark' }
-                  }}
-                >
-                  {showMapView ? 'Show List View' : 'Show Map View'}
-                </Button>
-              </Box>
-
-              {showMapView ? (
-                <Box sx={{ display: 'flex', gap: 2, mb: 3, maxHeight: '500px' }}>
-                  <Box sx={{ width: 250, height: 500, borderRadius: 2, overflow: 'hidden', flexShrink: 0 }}>
-                    <NearbyStores />
-                  </Box>
-                  <Box sx={{ flexGrow: 1, overflowY: 'auto', border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2 }}>
-                    <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
-                      Registered Stores
-                    </Typography>
-                    {loadingStores && <Typography>Loading stores...</Typography>}
-                    {fetchError && <Typography color="error">{fetchError}</Typography>}
-                    {!loadingStores && !fetchError && (
-                      registeredStores.length > 0 ? registeredStores
-                        // filter search results if searchQuery is not empty (optional)
-                        .filter(store => store.shopName.toLowerCase().includes(searchQuery.toLowerCase()))
-                        .map(store => (
-                          <Box key={store.id} sx={{ mb: 2 }}>
-                            <Typography variant="body1" fontWeight="medium">{store.shopName}</Typography>
-                            {store.shopAddress && <Typography variant="body2" color="text.secondary">{store.shopAddress}</Typography>}
-                          </Box>
-                        )) : (
-                        <Typography variant="body2" color="text.secondary">No registered stores found.</Typography>
-                      )
-                    )}
-                  </Box>
-                </Box>
-              ) : (
-                <NearbyStores />
-              )}
-            </motion.div>
-          )}
-
-          {activeTab === 'orders' && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
-              <Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold' }}>Recent Orders</Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {sampleOrders.map(order => (
-                  <motion.div key={order.id} whileHover={{ x: 5 }} transition={{ duration: 0.2 }}>
-                    <Card>
-                      <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Box>
-                          <Typography variant="h6" fontWeight="bold">{order.store}</Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {order.date} • {order.items} items
-                          </Typography>
-                        </Box>
-                        <Box textAlign="right">
-                          <Typography variant="h6" fontWeight="bold">{order.amount}</Typography>
-                          <Chip
-                            label={order.status}
-                            size="small"
-                            color={order.status === 'Delivered' ? 'success' : 'primary'}
-                          />
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ))}
->>>>>>> ae36d8ceeac87483c1976b210a326e298bae017b
               </Box>
             </motion.div>
           ) : (
@@ -257,7 +175,6 @@ const CustomerDashboard = () => {
                     <Typography variant="h5" sx={{ fontWeight: 'bold' }}>Nearby Stores</Typography>
                   </Box>
 
-<<<<<<< HEAD
                   {showMapView ? (
                     <Box sx={{ height: '500px', borderRadius: 2, overflow: 'hidden', mb: 3 }}>
                       <NearbyStores />
@@ -266,78 +183,6 @@ const CustomerDashboard = () => {
                     <NearbyStores listOnly />
                   )}
                 </motion.div>
-=======
-          {activeTab === 'lists' && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
-              <Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold' }}>My Lists</Typography>
-
-              <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-                <Button
-                  variant="contained"
-                  onClick={handleOpenNotepad}
-                  startIcon={<ListAlt />}
-                  sx={{ borderRadius: 2 }}
-                >
-                  Create New List
-                </Button>
-                <Button
-                  variant="outlined"
-                  onClick={() => setShowOCRUpload(true)}
-                  startIcon={<ListAlt />}
-                  sx={{ borderRadius: 2 }}
-                >
-                  Upload via OCR
-                </Button>
-              </Box>
-
-              {lists.length === 0 && <Typography>No lists created yet.</Typography>}
-
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                {lists.map(list => (
-                  <Card key={list.id} sx={{ width: 250 }}>
-                    <CardContent>
-                      <Typography variant="h6" fontWeight="bold">{list.name}</Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                        Created: {new Date(list.createdAt).toLocaleDateString()}
-                      </Typography>
-                      <Box sx={{ maxHeight: 100, overflowY: 'auto' }}>
-                        {list.items.map((item, i) => (
-                          <Typography key={i} variant="body2">• {item}</Typography>
-                        ))}
-                      </Box>
-                    </CardContent>
-                  </Card>
-                ))}
-              </Box>
-
-              {/* Notepad Dialog */}
-              <Dialog open={showNotepadDialog} onClose={() => setShowNotepadDialog(false)} maxWidth="sm" fullWidth>
-                <DialogTitle>Create New Grocery List</DialogTitle>
-                <DialogContent>
-                  <TextField
-                    multiline
-                    fullWidth
-                    minRows={8}
-                    placeholder="Enter one item per line"
-                    value={notepadText}
-                    onChange={(e) => setNotepadText(e.target.value)}
-                    variant="outlined"
-                  />
-                </DialogContent>
-                <DialogActions>
-                  <Button onClick={() => setShowNotepadDialog(false)}>Cancel</Button>
-                  <Button variant="contained" onClick={handleSaveNotepad} disabled={notepadText.trim().length === 0}>Save</Button>
-                </DialogActions>
-              </Dialog>
-
-              {/* OCR Upload Dialog */}
-              {showOCRUpload && (
-                <OCRUpload
-                  open={showOCRUpload}
-                  onClose={() => setShowOCRUpload(false)}
-                  onSuccess={handleOCRSuccess}
-                />
->>>>>>> ae36d8ceeac87483c1976b210a326e298bae017b
               )}
 
               {activeTab === 'orders' && (
