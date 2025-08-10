@@ -69,14 +69,18 @@ const ShopkeeperManagement = () => {
   });
 
   const categories = [
-    'Fruits',
-    'Vegetables',
-    'Dairy',
-    'Bakery',
-    'Meat',
-    'Beverages',
-    'Snacks',
-    'Household'
+    'Fresh Vegetables',
+    'Fresh Fruits',
+    'Dairy, Bread and Eggs',
+    'Cereals and Breakfast',
+    'Atta, Rice and Dal',
+    'Oils and Ghee',
+    'Masalas',
+    'Dry Fruits and Seeds Mix',
+    'Biscuits and Cakes',
+    'Tea, Coffee and Milk drinks',
+    'Snacks and Spreads',
+    'Meat and Seafood'
   ];
 
   useEffect(() => {

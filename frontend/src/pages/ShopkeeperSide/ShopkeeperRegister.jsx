@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-
 import { createUserWithEmailAndPassword } from "firebase/auth"; 
 import { doc, setDoc } from "firebase/firestore";
 import { db, auth } from '../../../firebase.js';
-
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   Box, 
@@ -18,7 +16,8 @@ import {
   Divider,
   FormControlLabel,
   Checkbox,
-  Alert
+  Alert,
+  CircularProgress
 } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import shopkeeperTheme from '../../themes/shopkeeperTheme';
@@ -56,31 +55,18 @@ const ShopkeeperRegister = () => {
       ...prev,
       [name]: name === 'agreeTerms' ? checked : value
     }));
-    // Clear error when user starts typing
     if (error) setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    e.stopPropagation();
     
-    console.log('[DEBUG] Form submission started');
-    console.log('[DEBUG] Event prevented');
-    
-    // CRITICAL: Set loading IMMEDIATELY to prevent multiple submissions
-    if (loading) {
-      console.log('[DEBUG] Already processing, ignoring submission');
-      return;
-    }
+    if (loading) return;
     
     setLoading(true);
     setError('');
 
-    console.log('[DEBUG] Form data:', formData);
-    console.log('[DEBUG] Auth object:', auth);
-    console.log('[DEBUG] DB object:', db);
-
-    // Validation checks
+    // Validation
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords don't match!");
       setLoading(false);
@@ -99,142 +85,92 @@ const ShopkeeperRegister = () => {
       return;
     }
 
-    // Add a small delay to see the loading state
-    console.log('[DEBUG] Starting Firebase operations...');
-
     try {
-      console.log('[Register] Step 1: Creating user with email:', formData.email);
-      
-      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      console.log('Creating user in Firebase Auth...');
+      const userCredential = await createUserWithEmailAndPassword(
+        auth, 
+        formData.email, 
+        formData.password
+      );
       const user = userCredential.user;
-      
-      console.log('[Register] Step 2: User created successfully');
-      console.log('[Register] User UID:', user.uid);
-      console.log('[Register] User email:', user.email);
-      console.log('[Register] User object:', user);
+      console.log('User created successfully:', user.uid);
 
-      // Wait a moment for auth to propagate
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Create the store document data
-      const storeData = {
+      const shopData = {
         shopName: formData.shopName,
-        items: [],
         ownerName: formData.name,
         ownerEmail: formData.email,
         phone: formData.phone,
         shopAddress: formData.shopAddress,
         createdAt: new Date(),
-        userId: user.uid,
-        // Add some debug fields
-        debugCreatedAt: Date.now(),
-        debugTimestamp: new Date().toISOString()
+        status: 'active',
+        categories: [],
+        products: [],
+        lastUpdated: new Date()
       };
 
-      console.log('[Register] Step 3: Attempting to save store data');
-      console.log('[Register] Store data to save:', storeData);
-      console.log('[Register] Document path: stores/' + user.uid);
-      console.log('[Register] Current auth user:', auth.currentUser);
-      
-      // Try to create the document
-      const storeDocRef = doc(db, "stores", user.uid);
-      console.log('[Register] Document reference created:', storeDocRef);
-      
-      await setDoc(storeDocRef, storeData);
-      
-      console.log('[Register] Step 4: Store data saved successfully to Firestore');
-      
-      // Set the localStorage flag that ShopkeeperManagement expects
+      console.log('Preparing to save shop data:', shopData);
+      const shopRef = doc(db, "shopkeepers", user.uid);
+      console.log('Document reference created:', shopRef.path);
+
+      await setDoc(shopRef, shopData);
+      console.log('Shop data saved successfully');
+
       localStorage.setItem('shopkeeperRegistered', 'true');
+      localStorage.setItem('shopkeeperId', user.uid);
       
-      // Verify the data was saved by trying to read it back
-      try {
-        const { getDoc } = await import('firebase/firestore');
-        const docSnap = await getDoc(storeDocRef);
-        if (docSnap.exists()) {
-          console.log('[Register] Step 5: Verification successful - document exists with data:', docSnap.data());
-        } else {
-          console.log('[Register] Step 5: WARNING - Document does not exist after creation');
-        }
-      } catch (verifyError) {
-        console.error('[Register] Step 5: Error verifying document:', verifyError);
-      }
-      
-      // Only navigate if everything was successful
-      console.log('[DEBUG] About to show success alert');
-      alert('Registration successful! Welcome to GroSnap!');
-      
-      console.log('[DEBUG] About to navigate');
       navigate('/shopkeeper/manage');
 
     } catch (error) {
-      console.error('[Register] ERROR CAUGHT:');
-      console.error('[Register] Full error object:', error);
-      console.error('[Register] Error name:', error.name);
-      console.error('[Register] Error code:', error.code);
-      console.error('[Register] Error message:', error.message);
-      console.error('[Register] Error stack:', error.stack);
+      console.error("Full registration error:", error);
+      console.error("Error code:", error.code);
+      console.error("Error message:", error.message);
       
-      // Handle specific Firebase errors
       let errorMessage = 'Registration failed. Please try again.';
       
-      if (error.code) {
-        switch (error.code) {
-          case 'auth/email-already-in-use':
-            errorMessage = 'This email is already registered. Please use a different email or login.';
-            break;
-          case 'auth/weak-password':
-            errorMessage = 'Password is too weak. Please choose a stronger password.';
-            break;
-          case 'auth/invalid-email':
-            errorMessage = 'Please enter a valid email address.';
-            break;
-          case 'permission-denied':
-            errorMessage = 'Permission denied. Please check Firestore rules and try again.';
-            break;
-          case 'unavailable':
-            errorMessage = 'Service temporarily unavailable. Please try again in a moment.';
-            break;
-          default:
-            errorMessage = `Registration failed: ${error.code} - ${error.message}`;
-        }
-      } else {
-        errorMessage = `Registration failed: ${error.message}`;
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          errorMessage = 'Email already in use. Please login instead.';
+          break;
+        case 'auth/weak-password':
+          errorMessage = 'Password should be at least 6 characters.';
+          break;
+        case 'auth/invalid-email':
+          errorMessage = 'Please enter a valid email address.';
+          break;
+        case 'permission-denied':
+          errorMessage = 'Database write permission denied. Contact support.';
+          break;
+        default:
+          errorMessage = error.message || 'Registration failed. Please try again.';
       }
       
       setError(errorMessage);
     } finally {
       setLoading(false);
-      console.log('[Register] Process completed, loading set to false');
     }
   };
 
   return (
     <ThemeProvider theme={shopkeeperTheme}>
-      <Box 
-        sx={{ 
-          minHeight: '100vh', 
-          bgcolor: 'background.default',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          p: 2
-        }}
-      >
+      <Box sx={{ 
+        minHeight: '100vh', 
+        bgcolor: 'background.default',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        p: 2
+      }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <Paper 
-            elevation={3} 
-            sx={{ 
-              p: { xs: 2, sm: 4 }, 
-              borderRadius: 4,
-              maxWidth: '800px',
-              width: '100%'
-            }}
-          >
+          <Paper elevation={3} sx={{ 
+            p: { xs: 2, sm: 4 }, 
+            borderRadius: 4,
+            maxWidth: '800px',
+            width: '100%'
+          }}>
             <Box sx={{ mb: 4, textAlign: 'center', position: 'relative' }}>
               <Button 
                 startIcon={<ArrowBack />} 
@@ -248,7 +184,7 @@ const ShopkeeperRegister = () => {
                 Register Your Shop
               </Typography>
               <Typography variant="body1" color="text.secondary">
-                Join GroSnap and grow your business with local customers
+                Join our platform and grow your business
               </Typography>
             </Box>
 
@@ -417,28 +353,23 @@ const ShopkeeperRegister = () => {
                   />
                 </Grid>
                 <Grid item xs={12}>
-                  <motion.div
-                    whileHover={{ scale: loading ? 1 : 1.01 }}
-                    whileTap={{ scale: loading ? 1 : 0.99 }}
-                  >
+                  <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
                     <Button
                       fullWidth
                       size="large"
                       variant="contained"
                       type="submit"
-                      disabled={!formData.agreeTerms || loading}
+                      disabled={loading || !formData.agreeTerms}
                       sx={{ py: 1.5, borderRadius: 2 }}
-                      onClick={(e) => {
-                        console.log('[DEBUG] Button clicked, loading state:', loading);
-                        if (loading) {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          console.log('[DEBUG] Prevented submission - already loading');
-                          return false;
-                        }
-                      }}
                     >
-                      {loading ? 'Registering Your Shop...' : 'Register My Shop'}
+                      {loading ? (
+                        <>
+                          <CircularProgress size={24} color="inherit" sx={{ mr: 2 }} />
+                          Registering...
+                        </>
+                      ) : (
+                        'Register My Shop'
+                      )}
                     </Button>
                   </motion.div>
                 </Grid>
