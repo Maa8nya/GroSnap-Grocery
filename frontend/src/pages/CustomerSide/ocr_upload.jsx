@@ -62,7 +62,7 @@ const OCRUpload = () => {
 
     setIsLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/find-items", {
+      const res = await fetch("http://localhost:5001/find-items", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: ocrText }),
