@@ -6,10 +6,12 @@ import {
 } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import customerTheme from '../../themes/customerTheme';
-import { ShoppingCart, Search, Store, ListAlt, AccountCircle, ArrowBack } from '@mui/icons-material';
+import { ShoppingCart, Search, Store, ListAlt, AccountCircle, ArrowBack, CloudUpload } from '@mui/icons-material';
 import NearbyStores from './NearbyStores';
 import OCRUpload from './ocr_upload';
 import RecommendedStores from './RecommendedStores';
+import { getDocs, collection } from 'firebase/firestore';
+import { db } from '../../../firebase';
 
 const CustomerDashboard = () => {
   const [activeTab, setActiveTab] = useState('stores');
@@ -35,7 +37,6 @@ const CustomerDashboard = () => {
       setLoadingStores(true);
       setFetchError(null);
       try {
-        // <-- Changed collection path here -->
         const snap = await getDocs(collection(db, 'shopkeepers'));
         const stores = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setRegisteredStores(stores);
@@ -98,13 +99,60 @@ const CustomerDashboard = () => {
   return (
     <ThemeProvider theme={customerTheme}>
       <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-        {/* Header */}
-        <Box sx={{ bgcolor: 'primary.main', color: 'white', p: 2 }}>
-          <Box sx={{ maxWidth: '1200px', mx: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h6" fontWeight="bold">GroSnap</Typography>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <IconButton color="inherit"><ShoppingCart /></IconButton>
-              <IconButton color="inherit"><AccountCircle /></IconButton>
+        {/* Enhanced Header with Logo and Back Button */}
+        <Box sx={{ 
+          bgcolor: 'primary.main', 
+          color: 'white', 
+          p: 2,
+          position: 'sticky',
+          top: 0,
+          zIndex: 1100,
+          boxShadow: 1
+        }}>
+          <Box sx={{ 
+            maxWidth: '1200px', 
+            mx: 'auto', 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center' 
+          }}>
+            {/* Logo and Back Button */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <IconButton 
+                  color="inherit" 
+                  onClick={() => window.history.back()}
+                  sx={{ mr: 1 }}
+                >
+                  <ArrowBack />
+                </IconButton>
+              </motion.div>
+              
+              <motion.div 
+                whileHover={{ rotate: 5 }} 
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                {/* Replace with your actual logo */}
+                <img 
+                  src="/logo.png" 
+                  alt="GroSnap Logo" 
+                  style={{ height: '48px' }} 
+                />
+              </motion.div>
+            </Box>
+
+            {/* User Actions */}
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                <IconButton color="inherit" aria-label="cart">
+                  <ShoppingCart />
+                </IconButton>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                <IconButton color="inherit" aria-label="account">
+                  <AccountCircle />
+                </IconButton>
+              </motion.div>
             </Box>
           </Box>
         </Box>
@@ -158,13 +206,8 @@ const CustomerDashboard = () => {
         <Box sx={{ p: 2, maxWidth: '1200px', mx: 'auto' }}>
           {showRecommendedStores ? (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
-            
-              
-              {/* Recommended stores content */}
               <Box sx={{ mt: 3 }}>
-              
-                      <RecommendedStores />
-                    
+                <RecommendedStores />
               </Box>
             </motion.div>
           ) : (
@@ -189,10 +232,7 @@ const CustomerDashboard = () => {
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
                   <Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold' }}>Recent Orders</Typography>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {[
-                      { id: 1, store: "Fresh Mart", date: "2023-06-15", status: "Delivered", amount: "₹1,245", items: 12 },
-                      { id: 2, store: "Daily Needs", date: "2023-06-10", status: "Delivered", amount: "₹890", items: 8 }
-                    ].map(order => (
+                    {sampleOrders.map(order => (
                       <motion.div key={order.id} whileHover={{ x: 5 }} transition={{ duration: 0.2 }}>
                         <Card>
                           <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -257,7 +297,11 @@ const CustomerDashboard = () => {
                       <Button variant="contained" startIcon={<ListAlt />} onClick={handleOpenNotepad} sx={{ mb: 2 }}>
                         Create New List
                       </Button>
-                      <Button variant="outlined" onClick={() => setShowOCRUpload(true)}>
+                      <Button 
+                        variant="outlined" 
+                        onClick={() => setShowOCRUpload(true)}
+                        startIcon={<CloudUpload />}
+                      >
                         Upload Handwritten List
                       </Button>
                     </Box>
@@ -267,6 +311,45 @@ const CustomerDashboard = () => {
             </>
           )}
         </Box>
+
+        {/* OCR Upload Dialog */}
+        <Dialog 
+          open={showOCRUpload} 
+          onClose={() => setShowOCRUpload(false)}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>Upload Handwritten List</DialogTitle>
+          <DialogContent>
+            <OCRUpload onSuccess={handleOCRSuccess} />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setShowOCRUpload(false)}>Cancel</Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Notepad Dialog */}
+        <Dialog open={showNotepadDialog} onClose={() => setShowNotepadDialog(false)}>
+          <DialogTitle>Create New Grocery List</DialogTitle>
+          <DialogContent>
+            <TextField
+              multiline
+              rows={10}
+              fullWidth
+              variant="outlined"
+              placeholder="Enter your grocery items, one per line..."
+              value={notepadText}
+              onChange={(e) => setNotepadText(e.target.value)}
+              sx={{ mt: 2, minWidth: '400px' }}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setShowNotepadDialog(false)}>Cancel</Button>
+            <Button onClick={handleSaveNotepad} variant="contained" color="primary">
+              Save List
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </ThemeProvider>
   );

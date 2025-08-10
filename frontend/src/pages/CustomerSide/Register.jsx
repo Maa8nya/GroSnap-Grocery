@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
-
+import { Link, useNavigate } from 'react-router-dom';
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import { collection, doc, setDoc } from "firebase/firestore";
-import { db,auth } from '../../../firebase.js';  // Make sure your firebase.js exports Firestore db
+import { db, auth } from '../../../firebase.js';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -41,31 +39,59 @@ const Register = () => {
     }
 
     try {
-      // Create user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const user = userCredential.user;
 
-      // Save additional info to Firestore
       await setDoc(doc(db, "users", user.uid), {
-  uid: user.uid,
-  firstName: formData.firstName,
-  lastName: formData.lastName,
-  email: formData.email,
-  phone: formData.phone,
-  createdAt: new Date()
-});
+        uid: user.uid,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        createdAt: new Date()
+      });
 
-      // Navigate to dashboard
       navigate('/customer/dashboard');
     } catch (error) {
-  console.error("Error registering user:", error);
-  alert(`Failed to register user: ${error.message}`);
-  }
-
+      console.error("Error registering user:", error);
+      alert(`Failed to register user: ${error.message}`);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 to-amber-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 to-amber-50 flex flex-col items-center p-4">
+      {/* Navigation Bar */}
+      <motion.nav 
+        initial={{ y: -50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-4xl flex justify-between items-center bg-white/80 backdrop-blur-md p-4 rounded-xl shadow-sm z-10 mb-8"
+      >
+        <div className="flex items-center gap-2">
+          <motion.div
+            whileHover={{ rotate: 10 }}
+            transition={{ type: "spring", stiffness: 300 }}
+            className="flex items-center"
+          >
+            {/* Replace with your actual logo */}
+            <img 
+              src="/logo.png" 
+              alt="GroSnap Logo" 
+              className="h-14" 
+            />
+          </motion.div>
+        </div>
+        
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => navigate(-1)}
+          className="px-4 py-2 rounded-lg hover:bg-rose-100/50 text-rose-600 transition-all duration-200 font-medium"
+        >
+          Back
+        </motion.button>
+      </motion.nav>
+
       {/* Animated Background Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-rose-100/30 blur-3xl"></div>

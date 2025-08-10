@@ -117,7 +117,7 @@ const LandingSection = () => {
           ></motion.div>
         </div>
 
-        {/* Navigation Bar */}
+        {/* Navigation Bar with Logo */}
         <motion.nav 
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -126,16 +126,22 @@ const LandingSection = () => {
         >
           <div className="flex items-center gap-2">
             <motion.div
-              whileHover={{ rotate: 10 }}
+              whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 300 }}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7 text-rose-500">
-                <path d="M2.25 2.25a.75.75 0 000 1.5h1.386c.17 0 .318.114.362.278l2.558 9.592a3.752 3.752 0 00-2.806 3.63c0 .414.336.75.75.75h15.75a.75.75 0 000-1.5H5.378A2.25 2.25 0 017.5 15h11.218a.75.75 0 00.674-.421 60.358 60.358 0 002.96-7.228.75.75 0 00-.525-.965A60.864 60.864 0 005.68 4.509l-.232-.867A1.875 1.875 0 003.636 2.25H2.25zM3.75 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM16.5 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0z" />
-              </svg>
+              {/* GroSnap Logo - Replace with your actual logo file */}
+              <img 
+                src="/logo.png" 
+                alt="GroSnap " 
+                className="h-20" 
+              />
+              {/* Alternative if you have a local file:
+              <img 
+                src="/images/grosnap-logo.png" 
+                alt="GroSnap Logo" 
+                className="h-10" 
+              /> */}
             </motion.div>
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-rose-500 to-amber-500 bg-clip-text text-transparent tracking-tight">
-              GROSNAP
-            </h2>
           </div>
           <div className="flex gap-4 sm:gap-6 text-sm sm:text-base font-medium">
             <motion.div 
@@ -143,14 +149,14 @@ const LandingSection = () => {
               whileTap={{ scale: 0.95 }}
               className="px-5 py-2.5 rounded-lg hover:bg-rose-100/50 text-rose-600 transition-all duration-200 font-semibold"
             >
-              <Link to="/register">Sign Up</Link>
+              <Link to="/customer/signup">Customer Sign Up</Link>
             </motion.div>
             <motion.div 
               whileHover={{ scale: 1.05, boxShadow: "0 5px 15px rgba(244, 63, 94, 0.3)" }}
               whileTap={{ scale: 0.95 }}
               className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-rose-500 to-amber-500 text-white hover:shadow-lg transition-all duration-200 font-semibold"
             >
-              <Link to="/login">Sign In</Link>
+              <Link to="/shopkeeper/login">Shopkeeper Sign Up</Link>
             </motion.div>
           </div>
         </motion.nav>
@@ -325,51 +331,6 @@ const LandingSection = () => {
           </div>
         </motion.div>
 
-        {/* Testimonial Section */}
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-          className="mt-24 max-w-4xl mx-auto px-6 py-12 bg-white rounded-2xl shadow-sm z-10"
-        >
-          <div className="text-center mb-12">
-            <h3 className="text-3xl font-bold text-gray-800 mb-4">Trusted by Local Communities</h3>
-            <p className="text-gray-600">What our users say about GroSnap</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <motion.div
-                key={testimonial.name}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                viewport={{ once: true }}
-                className={`p-6 rounded-xl border ${index % 2 === 0 ? 'bg-rose-50/50 border-rose-100' : 'bg-amber-50/50 border-amber-100'}`}
-              >
-                <div className="flex items-center mb-4">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${index % 2 === 0 ? 'bg-rose-100' : 'bg-amber-100'}`}>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={`w-6 h-6 ${index % 2 === 0 ? 'text-rose-500' : 'text-amber-500'}`}>
-                      <path fillRule="evenodd" d={testimonial.icon} clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-4">
-                    <h4 className="font-semibold text-gray-800">{testimonial.name}</h4>
-                    <div className="flex mt-1">
-                      {[...Array(5)].map((_, i) => (
-                        <svg key={i} className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <p className="text-gray-600 italic">"{testimonial.quote}"</p>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-
         {/* CTA Section */}
         <motion.div 
           initial={{ opacity: 0, y: 30 }}
@@ -414,10 +375,11 @@ const LandingSection = () => {
         >
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center gap-2 mb-4 md:mb-0">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-rose-500">
-                <path d="M2.25 2.25a.75.75 0 000 1.5h1.386c.17 0 .318.114.362.278l2.558 9.592a3.752 3.752 0 00-2.806 3.63c0 .414.336.75.75.75h15.75a.75.75 0 000-1.5H5.378A2.25 2.25 0 017.5 15h11.218a.75.75 0 00.674-.421 60.358 60.358 0 002.96-7.228.75.75 0 00-.525-.965A60.864 60.864 0 005.68 4.509l-.232-.867A1.875 1.875 0 003.636 2.25H2.25zM3.75 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM16.5 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0z" />
-              </svg>
-              <span className="font-bold text-gray-700">GROSNAP</span>
+              <img 
+                src="/logo.png" 
+                alt="GroSnap Logo" 
+                className="h-12" 
+              />
             </div>
             <div className="flex gap-6 mb-4 md:mb-0">
               <a href="#" className="hover:text-rose-600 transition-colors">About</a>
