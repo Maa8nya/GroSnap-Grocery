@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Box, Typography, Button, TextField, Card, CardContent,
@@ -9,7 +9,8 @@ import customerTheme from '../../themes/customerTheme';
 import { ShoppingCart, Search, Store, ListAlt, AccountCircle } from '@mui/icons-material';
 import NearbyStores from './NearbyStores';
 import OCRUpload from './ocr_upload';
-
+import { db } from '../../../firebase';
+import { collection, getDocs } from 'firebase/firestore';
 
 const CustomerDashboard = () => {
   const [activeTab, setActiveTab] = useState('stores');
@@ -19,14 +20,40 @@ const CustomerDashboard = () => {
   const [showNotepadDialog, setShowNotepadDialog] = useState(false);
   const [notepadText, setNotepadText] = useState('');
   const [lists, setLists] = useState([]);
+  const [registeredStores, setRegisteredStores] = useState([]);
+  const [loadingStores, setLoadingStores] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
 
-  // Open Dialog to create typed list (in-app notepad)
+  const sampleOrders = [
+    { id: 1, store: 'Grocery Mart', date: '2025-08-01', items: 5, amount: '$24.99', status: 'Delivered' },
+    { id: 2, store: 'Fresh Foods', date: '2025-08-02', items: 3, amount: '$12.50', status: 'In Transit' },
+    { id: 3, store: 'Veggie Ville', date: '2025-08-05', items: 7, amount: '$40.00', status: 'Processing' },
+  ];
+
+  useEffect(() => {
+    const fetchRegisteredStores = async () => {
+      setLoadingStores(true);
+      setFetchError(null);
+      try {
+        // <-- Changed collection path here -->
+        const snap = await getDocs(collection(db, 'shopkeepers'));
+        const stores = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setRegisteredStores(stores);
+      } catch (err) {
+        console.error('Error fetching stores:', err);
+        setFetchError('Failed to load registered stores');
+      } finally {
+        setLoadingStores(false);
+      }
+    };
+    fetchRegisteredStores();
+  }, []);
+
   const handleOpenNotepad = () => {
-    setNotepadText(''); // reset
+    setNotepadText('');
     setShowNotepadDialog(true);
   };
 
-  // Save typed list, parse lines, and add to lists (same behaviour as OCR)
   const handleSaveNotepad = () => {
     const items = notepadText
       .split('\n')
@@ -66,7 +93,7 @@ const CustomerDashboard = () => {
             <Typography variant="h6" fontWeight="bold">GroSnap</Typography>
             <Box sx={{ display: 'flex', gap: 2 }}>
               <IconButton color="inherit"><ShoppingCart /></IconButton>
-               <IconButton color="inherit"><AccountCircle /></IconButton>
+              <IconButton color="inherit"><AccountCircle /></IconButton>
             </Box>
           </Box>
         </Box>
@@ -129,11 +156,33 @@ const CustomerDashboard = () => {
               </Box>
 
               {showMapView ? (
-                <Box sx={{ height: '500px', borderRadius: 2, overflow: 'hidden', mb: 3 }}>
-                  <NearbyStores />
+                <Box sx={{ display: 'flex', gap: 2, mb: 3, maxHeight: '500px' }}>
+                  <Box sx={{ width: 250, height: 500, borderRadius: 2, overflow: 'hidden', flexShrink: 0 }}>
+                    <NearbyStores />
+                  </Box>
+                  <Box sx={{ flexGrow: 1, overflowY: 'auto', border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2 }}>
+                    <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
+                      Registered Stores
+                    </Typography>
+                    {loadingStores && <Typography>Loading stores...</Typography>}
+                    {fetchError && <Typography color="error">{fetchError}</Typography>}
+                    {!loadingStores && !fetchError && (
+                      registeredStores.length > 0 ? registeredStores
+                        // filter search results if searchQuery is not empty (optional)
+                        .filter(store => store.shopName.toLowerCase().includes(searchQuery.toLowerCase()))
+                        .map(store => (
+                          <Box key={store.id} sx={{ mb: 2 }}>
+                            <Typography variant="body1" fontWeight="medium">{store.shopName}</Typography>
+                            {store.shopAddress && <Typography variant="body2" color="text.secondary">{store.shopAddress}</Typography>}
+                          </Box>
+                        )) : (
+                        <Typography variant="body2" color="text.secondary">No registered stores found.</Typography>
+                      )
+                    )}
+                  </Box>
                 </Box>
               ) : (
-                <NearbyStores listOnly />
+                <NearbyStores />
               )}
             </motion.div>
           )}
@@ -142,10 +191,7 @@ const CustomerDashboard = () => {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
               <Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold' }}>Recent Orders</Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {[
-                  { id: 1, store: "Fresh Mart", date: "2023-06-15", status: "Delivered", amount: "₹1,245", items: 12 },
-                  { id: 2, store: "Daily Needs", date: "2023-06-10", status: "Delivered", amount: "₹890", items: 8 }
-                ].map(order => (
+                {sampleOrders.map(order => (
                   <motion.div key={order.id} whileHover={{ x: 5 }} transition={{ duration: 0.2 }}>
                     <Card>
                       <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -173,91 +219,78 @@ const CustomerDashboard = () => {
 
           {activeTab === 'lists' && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
-              <Typography variant="h5" fontWeight="bold" sx={{ mb: 2 }}>My Lists</Typography>
-              {lists.length > 0 ? (
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 3 }}>
-                  {lists.map(list => (
-                    <Card key={list.id}>
-                      <CardContent>
-                        <Typography variant="h6" fontWeight="bold">{list.name}</Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                          Created: {new Date(list.createdAt).toLocaleDateString()}
-                        </Typography>
-                        <Box sx={{ maxHeight: '150px', overflow: 'auto', mb: 2 }}>
-                          {list.items.length > 0 ? (
-                            <ul style={{ paddingLeft: '20px', margin: 0 }}>
-                              {list.items.map((item, idx) => (
-                                <li key={idx}>
-                                  <Typography variant="body2">{item}</Typography>
-                                </li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <Typography variant="body2" color="text.secondary">No items</Typography>
-                          )}
-                        </Box>
-                        <Button variant="outlined" fullWidth>View Details</Button>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </Box>
-              ) : (
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }}>
-                  <ListAlt sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
-                  <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-                    You haven't created any lists yet
-                  </Typography>
-                  <Button variant="contained" startIcon={<ListAlt />} onClick={handleOpenNotepad} sx={{ mb: 2 }}>
-                    Create New List
-                  </Button>
-                  <Button variant="outlined" onClick={() => setShowOCRUpload(true)}>
-                    Upload Handwritten List
-                  </Button>
-                </Box>
+              <Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold' }}>My Lists</Typography>
+
+              <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+                <Button
+                  variant="contained"
+                  onClick={handleOpenNotepad}
+                  startIcon={<ListAlt />}
+                  sx={{ borderRadius: 2 }}
+                >
+                  Create New List
+                </Button>
+                <Button
+                  variant="outlined"
+                  onClick={() => setShowOCRUpload(true)}
+                  startIcon={<ListAlt />}
+                  sx={{ borderRadius: 2 }}
+                >
+                  Upload via OCR
+                </Button>
+              </Box>
+
+              {lists.length === 0 && <Typography>No lists created yet.</Typography>}
+
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                {lists.map(list => (
+                  <Card key={list.id} sx={{ width: 250 }}>
+                    <CardContent>
+                      <Typography variant="h6" fontWeight="bold">{list.name}</Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        Created: {new Date(list.createdAt).toLocaleDateString()}
+                      </Typography>
+                      <Box sx={{ maxHeight: 100, overflowY: 'auto' }}>
+                        {list.items.map((item, i) => (
+                          <Typography key={i} variant="body2">• {item}</Typography>
+                        ))}
+                      </Box>
+                    </CardContent>
+                  </Card>
+                ))}
+              </Box>
+
+              {/* Notepad Dialog */}
+              <Dialog open={showNotepadDialog} onClose={() => setShowNotepadDialog(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>Create New Grocery List</DialogTitle>
+                <DialogContent>
+                  <TextField
+                    multiline
+                    fullWidth
+                    minRows={8}
+                    placeholder="Enter one item per line"
+                    value={notepadText}
+                    onChange={(e) => setNotepadText(e.target.value)}
+                    variant="outlined"
+                  />
+                </DialogContent>
+                <DialogActions>
+                  <Button onClick={() => setShowNotepadDialog(false)}>Cancel</Button>
+                  <Button variant="contained" onClick={handleSaveNotepad} disabled={notepadText.trim().length === 0}>Save</Button>
+                </DialogActions>
+              </Dialog>
+
+              {/* OCR Upload Dialog */}
+              {showOCRUpload && (
+                <OCRUpload
+                  open={showOCRUpload}
+                  onClose={() => setShowOCRUpload(false)}
+                  onSuccess={handleOCRSuccess}
+                />
               )}
             </motion.div>
           )}
         </Box>
-
-        {/* OCR Upload Modal */}
-        <Dialog open={showOCRUpload} onClose={() => setShowOCRUpload(false)} maxWidth="md" fullWidth>
-          <DialogTitle>Upload Handwritten Grocery List</DialogTitle>
-          <DialogContent>
-            <OCRUpload onSuccess={handleOCRSuccess} />
-            <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-              <Button variant="outlined" onClick={() => setShowOCRUpload(false)} sx={{ mr: 2 }}>Cancel</Button>
-            </Box>
-          </DialogContent>
-        </Dialog>
-
-        {/* In-app Notepad Dialog (typed lists) */}
-        <Dialog open={showNotepadDialog} onClose={() => setShowNotepadDialog(false)} maxWidth="sm" fullWidth>
-          <DialogTitle>Create Grocery List</DialogTitle>
-          <DialogContent>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              Type each item on a new line. Click Save to parse and add this list.
-            </Typography>
-            <TextField
-              value={notepadText}
-              onChange={(e) => setNotepadText(e.target.value)}
-              placeholder="e.g. 1. Milk&#10;2. Eggs&#10;3. Bread"
-              multiline
-              minRows={10}
-              fullWidth
-              variant="outlined"
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setShowNotepadDialog(false)}>Cancel</Button>
-            <Button
-              variant="contained"
-              onClick={handleSaveNotepad}
-              disabled={notepadText.trim().length === 0}
-            >
-              Save
-            </Button>
-          </DialogActions>
-        </Dialog>
       </Box>
     </ThemeProvider>
   );

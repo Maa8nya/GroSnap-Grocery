@@ -1,13 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import './fixleafleticons';
+import { db } from '../../../firebase';  // adjust path if needed
+import { collection, getDocs } from 'firebase/firestore';
 
 function NearbyStores() {
   const [location, setLocation] = useState(null);
   const [stores, setStores] = useState([]);
+  const [firestoreStores, setFirestoreStores] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingFirestore, setLoadingFirestore] = useState(true);
   const [error, setError] = useState('');
+  const [firestoreError, setFirestoreError] = useState('');
 
   const getDistance = (lat1, lon1, lat2, lon2) => {
     const R = 6371;
@@ -23,6 +28,7 @@ function NearbyStores() {
 
   const kmToMinutes = (km) => Math.round((km / 5) * 60);
 
+  // Fetch stores from Overpass API
   const fetchStores = async (lat, lon) => {
     setLoading(true);
     setError('');
@@ -67,6 +73,22 @@ function NearbyStores() {
     }
   };
 
+  // Fetch Firestore registered stores
+  const fetchRegisteredStores = async () => {
+    setLoadingFirestore(true);
+    setFirestoreError(null);
+    try {
+      const snap = await getDocs(collection(db, 'shopkeepers'));
+      const storesFromDb = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setFirestoreStores(storesFromDb);
+    } catch (err) {
+      console.error('Error fetching Firestore stores:', err);
+      setFirestoreError('Failed to load registered stores');
+    } finally {
+      setLoadingFirestore(false);
+    }
+  };
+
   const locateUser = () => {
     if (!navigator.geolocation) {
       setError('Geolocation is not supported by your browser');
@@ -79,6 +101,7 @@ function NearbyStores() {
         const { latitude, longitude } = position.coords;
         setLocation({ lat: latitude, lon: longitude });
         fetchStores(latitude, longitude);
+        fetchRegisteredStores();  // fetch Firestore stores once location is fetched
       },
       (err) => {
         setError(err.message);
@@ -123,7 +146,7 @@ function NearbyStores() {
         </button>
       </div>
 
-      {error && (
+      {(error || firestoreError) && (
         <div style={{
           backgroundColor: '#ffebee',
           color: '#d32f2f',
@@ -132,103 +155,147 @@ function NearbyStores() {
           marginBottom: '20px',
           textAlign: 'center'
         }}>
-          {error}
+          {error || firestoreError}
         </div>
       )}
 
       {location && (
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          flex: 1,
-          gap: '20px'
-        }}>
-          {/* Map Container */}
+        <>
           <div style={{
-            height: '400px',
-            width: '100%',
-            borderRadius: '8px',
-            overflow: 'hidden',
-            boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '20px'
           }}>
-            <MapContainer
-              center={[location.lat, location.lon]}
-              zoom={15}
-              style={{ height: '100%', width: '100%' }}
-            >
-              <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              />
-              <Marker position={[location.lat, location.lon]}>
-                <Popup>Your Location</Popup>
-              </Marker>
-              {stores.map(store => (
-                <Marker key={store.id} position={[store.lat, store.lon]}>
-                  <Popup>
-                    <div>
-                      <h4 style={{ margin: '5px 0' }}>{store.name}</h4>
-                      <p style={{ margin: '5px 0' }}>{store.type}</p>
-                      <p style={{ margin: '5px 0' }}>
-                        {store.distance.toFixed(2)} km away
-                      </p>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
-            </MapContainer>
-          </div>
-
-          {/* Horizontal Scrollable Store Cards */}
-          <div style={{
-            padding: '10px 0',
-            overflowX: 'auto',
-            whiteSpace: 'nowrap',
-            borderTop: '1px solid #ddd'
-          }}>
-            <h2 style={{
-              marginBottom: '10px',
-              paddingLeft: '10px'
+            {/* Map Container */}
+            <div style={{
+              height: '250px',
+              width: '20%',
+              borderRadius: '8px',
+              overflow: 'hidden',
+              boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
             }}>
-              📍 Nearby Stores ({stores.length})
-            </h2>
-
-            {stores.length > 0 ? (
-              <div style={{
-                display: 'flex',
-                gap: '15px',
-                padding: '10px',
-                minHeight: '150px'
-              }}>
+              <MapContainer
+                center={[location.lat, location.lon]}
+                zoom={15}
+                style={{ height: '100%', width: '100%' }}
+              >
+                <TileLayer
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                />
+                <Marker position={[location.lat, location.lon]}>
+                  <Popup>Your Location</Popup>
+                </Marker>
                 {stores.map(store => (
-                  <div key={store.id} style={{
-                    minWidth: '220px',
-                    backgroundColor: 'white',
-                    borderRadius: '8px',
-                    padding: '15px',
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
-                    display: 'inline-block',
-                    whiteSpace: 'normal'
-                  }}>
-                    <h3 style={{ margin: '0 0 5px', color: '#2E7D32' }}>{store.name}</h3>
-                    <p style={{ margin: '5px 0', color: '#555' }}>{store.type}</p>
-                    <p style={{ margin: '5px 0' }}>🚶‍♂️ ~{kmToMinutes(store.distance)} min</p>
-                    <p style={{ margin: '0', fontWeight: 'bold' }}>{store.distance.toFixed(2)} km</p>
-                  </div>
+                  <Marker key={store.id} position={[store.lat, store.lon]}>
+                    <Popup>
+                      <div>
+                        <h4 style={{ margin: '5px 0' }}>{store.name}</h4>
+                        <p style={{ margin: '5px 0' }}>{store.type}</p>
+                        <p style={{ margin: '5px 0' }}>
+                          {store.distance.toFixed(2)} km away
+                        </p>
+                      </div>
+                    </Popup>
+                  </Marker>
                 ))}
-              </div>
-            ) : (
-              <div style={{
-                backgroundColor: '#E3F2FD',
-                padding: '20px',
-                borderRadius: '8px',
-                textAlign: 'center'
+                {firestoreStores.map(store => (
+                  store.latitude && store.longitude && (
+                    <Marker key={store.id} position={[store.latitude, store.longitude]}>
+                      <Popup>
+                        <div>
+                          <h4 style={{ margin: '5px 0' }}>{store.shopName}</h4>
+                          <p style={{ margin: '5px 0' }}>{store.shopAddress}</p>
+                          {/* optionally add distance */}
+                        </div>
+                      </Popup>
+                    </Marker>
+                  )
+                ))}
+              </MapContainer>
+            </div>
+
+            {/* Horizontal Scrollable Store Cards */}
+            <div style={{
+              padding: '10px 0',
+              overflowX: 'auto',
+              whiteSpace: 'nowrap',
+              borderTop: '1px solid #ddd'
+            }}>
+              <h2 style={{
+                marginBottom: '10px',
+                paddingLeft: '10px'
               }}>
-                <p style={{ margin: 0 }}>No stores found in your area.</p>
-              </div>
-            )}
+                📍 Nearby Stores ({stores.length})
+              </h2>
+
+              {stores.length > 0 ? (
+                <div style={{
+                  display: 'flex',
+                  gap: '15px',
+                  padding: '10px',
+                  minHeight: '150px'
+                }}>
+                  {stores.map(store => (
+                    <div key={store.id} style={{
+                      minWidth: '220px',
+                      backgroundColor: 'white',
+                      borderRadius: '8px',
+                      padding: '15px',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+                      display: 'inline-block',
+                      whiteSpace: 'normal'
+                    }}>
+                      <h3 style={{ margin: '0 0 5px', color: '#2E7D32' }}>{store.name}</h3>
+                      <p style={{ margin: '5px 0', color: '#555' }}>{store.type}</p>
+                      <p style={{ margin: '5px 0' }}>🚶‍♂️ ~{kmToMinutes(store.distance)} min</p>
+                      <p style={{ margin: '0', fontWeight: 'bold' }}>{store.distance.toFixed(2)} km</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{
+                  backgroundColor: '#E3F2FD',
+                  padding: '20px',
+                  borderRadius: '8px',
+                  textAlign: 'center'
+                }}>
+                  <p style={{ margin: 0 }}>No stores found in your area.</p>
+                </div>
+              )}
+
+              {/* Firestore registered stores list */}
+              <h2 style={{ marginTop: 30, paddingLeft: 10 }}>
+                🏪 Registered Stores ({firestoreStores.length})
+              </h2>
+              {loadingFirestore && <p>Loading registered stores...</p>}
+              {!loadingFirestore && firestoreStores.length === 0 && <p>No registered stores found.</p>}
+              {!loadingFirestore && firestoreStores.length > 0 && (
+                <div style={{
+                  display: 'flex',
+                  gap: '15px',
+                  padding: '10px',
+                  overflowX: 'auto'
+                }}>
+                  {firestoreStores.map(store => (
+                    <div key={store.id} style={{
+                      minWidth: '220px',
+                      backgroundColor: 'white',
+                      borderRadius: '8px',
+                      padding: '15px',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+                      display: 'inline-block',
+                      whiteSpace: 'normal'
+                    }}>
+                      <h3 style={{ margin: '0 0 5px', color: '#2E7D32' }}>{store.shopName}</h3>
+                      <p style={{ margin: '5px 0', color: '#555' }}>{store.shopAddress}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {!location && !loading && (
