@@ -2,14 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import './fixleafleticons';
-<<<<<<< HEAD
 import { db } from '../../../firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
-=======
-import { db } from '../../../firebase';  // adjust path if needed
-import { collection, getDocs } from 'firebase/firestore';
->>>>>>> ae36d8ceeac87483c1976b210a326e298bae017b
 
 function NearbyStores() {
   const navigate = useNavigate(); 
@@ -35,12 +30,7 @@ function NearbyStores() {
 
   const kmToMinutes = (km) => Math.round((km / 5) * 60);
 
-<<<<<<< HEAD
   const fetchStores = async (lat, lon, radius = 8000) => {
-=======
-  // Fetch stores from Overpass API
-  const fetchStores = async (lat, lon) => {
->>>>>>> ae36d8ceeac87483c1976b210a326e298bae017b
     setLoading(true);
     setError('');
 
@@ -105,10 +95,6 @@ function NearbyStores() {
     }
   };
 
-<<<<<<< HEAD
-=======
-  // Fetch Firestore registered stores
->>>>>>> ae36d8ceeac87483c1976b210a326e298bae017b
   const fetchRegisteredStores = async () => {
     setLoadingFirestore(true);
     setFirestoreError(null);
@@ -137,11 +123,7 @@ function NearbyStores() {
         console.log("User location:", latitude, longitude);
         setLocation({ lat: latitude, lon: longitude });
         fetchStores(latitude, longitude);
-<<<<<<< HEAD
         fetchRegisteredStores();
-=======
-        fetchRegisteredStores();  // fetch Firestore stores once location is fetched
->>>>>>> ae36d8ceeac87483c1976b210a326e298bae017b
       },
       (err) => {
         console.error("Geolocation error:", err);
@@ -217,22 +199,12 @@ function NearbyStores() {
         <>
           <div style={{
             display: 'flex',
-<<<<<<< HEAD
             gap: '20px',
             marginBottom: '20px'
           }}>
             <div style={{
               flex: '3',
               height: '400px',
-=======
-            flexDirection: 'column',
-            gap: '20px'
-          }}>
-            {/* Map Container */}
-            <div style={{
-              height: '250px',
-              width: '20%',
->>>>>>> ae36d8ceeac87483c1976b210a326e298bae017b
               borderRadius: '8px',
               overflow: 'hidden',
               boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
@@ -244,16 +216,11 @@ function NearbyStores() {
               >
                 <TileLayer
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-<<<<<<< HEAD
                   attribution='&copy; OpenStreetMap contributors'
-=======
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
->>>>>>> ae36d8ceeac87483c1976b210a326e298bae017b
                 />
                 <Marker position={[location.lat, location.lon]}>
                   <Popup>Your Location</Popup>
                 </Marker>
-<<<<<<< HEAD
                 {stores.map(store => (
                   <Marker key={store.id} position={[store.lat, store.lon]}>
                     <Popup>
@@ -431,20 +398,6 @@ function NearbyStores() {
                       📞 Contact
                     </button>
                   </div>
-=======
-                {stores.map(store => (
-                  <Marker key={store.id} position={[store.lat, store.lon]}>
-                    <Popup>
-                      <div>
-                        <h4 style={{ margin: '5px 0' }}>{store.name}</h4>
-                        <p style={{ margin: '5px 0' }}>{store.type}</p>
-                        <p style={{ margin: '5px 0' }}>
-                          {store.distance.toFixed(2)} km away
-                        </p>
-                      </div>
-                    </Popup>
-                  </Marker>
->>>>>>> ae36d8ceeac87483c1976b210a326e298bae017b
                 ))}
                 {firestoreStores.map(store => (
                   store.latitude && store.longitude && (
@@ -459,10 +412,10 @@ function NearbyStores() {
                     </Marker>
                   )
                 ))}
-              </MapContainer>
+              
             </div>
 
-            {/* Horizontal Scrollable Store Cards */}
+              {/* Horizontal Scrollable Store Cards */}
             <div style={{
               padding: '10px 0',
               overflowX: 'auto',
@@ -565,9 +518,4 @@ function NearbyStores() {
   );
 }
 
-<<<<<<< HEAD
 export default NearbyStores;
-=======
-export default NearbyStores;
-//hope this works
->>>>>>> ae36d8ceeac87483c1976b210a326e298bae017b
