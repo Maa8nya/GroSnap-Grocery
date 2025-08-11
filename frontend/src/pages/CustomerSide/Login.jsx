@@ -39,7 +39,7 @@ const Login = () => {
             <img 
               src="/logo.png" 
               alt="GroSnap Logo" 
-              className="h-14" 
+              className="h-12" 
             />
           </motion.div>
         </div>
