@@ -13,6 +13,9 @@ import ShopkeeperManagement from "./pages/ShopkeeperSide/ShopkeeperManagement";
 import IntroGroSnap from "./pages/IntroGroSnap";
 import GroceryCategories from "./pages/CustomerSide/Grocery";
 import CustomerProfile from "./pages/CustomerSide/CustomerProfile";
+import Cart from "./pages/CustomerSide/Cart";
+import OCRUpload from "./pages/CustomerSide/ocr_upload";
+import OrderPlaced from "./pages/CustomerSide/OrderPlaced";
 
 function AppContent() {
   const [showIntro, setShowIntro] = useState(true);
@@ -48,6 +51,8 @@ function AppContent() {
       <Route path="/customer/login" element={<CustomerLogin />} />
       <Route path="/customer/Grocery" element={<GroceryCategories />} />
       <Route path="/customer/profile" element={<CustomerProfile />} />
+      <Route path="/customer/Cart" element={<Cart />} />
+      <Route path="/customer/OrderPlaced" element={<OrderPlaced />} />
 
       {/* Shopkeeper */}
       <Route path="/shopkeeper" element={<ShopkeeperDashboard />} />

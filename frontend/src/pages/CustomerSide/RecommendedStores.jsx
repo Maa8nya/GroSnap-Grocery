@@ -10,7 +10,7 @@ import {
   Container
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { Store, ArrowBack, LocationOn, LocalOffer, DirectionsWalk, DirectionsCar } from '@mui/icons-material';
+import { Store, ArrowBack, LocationOn, LocalOffer, DirectionsWalk, ShoppingCart } from '@mui/icons-material';
 
 const RecommendedStores = () => {
   const navigate = useNavigate();
@@ -35,48 +35,53 @@ const RecommendedStores = () => {
     return `${distance} km away`;
   };
 
+  const handleShopNow = (storeId) => {
+    // Navigate to Grocery page with store ID
+    navigate('/customer/Grocery', { state: { storeId } });
+  };
+
   useEffect(() => {
     // 6 Dummy stores with distances
     const dummyStores = [
       {
         id: '1',
-        name: 'Fresh Mart',
-        address: '123 Main Street, Cityville',
+        name: 'Swarnagiri Stores',
+        address: 'Gokulam Main Road, Gokulam',
         discount: '15% off first order',
         location: { lat: 12.9716, lng: 77.5946 } // Same as user for demo
       },
       {
         id: '2',
-        name: 'Urban Delights',
-        address: '456 Downtown Ave, Townsville',
+        name: 'Bhairaveshwara Stores',
+        address: 'Near Marimallappa School,4th Stage, Vijay Nagar',
         discount: 'Free delivery',
         location: { lat: 12.9816, lng: 77.6046 } // Nearby
       },
       {
         id: '3',
-        name: 'Green Grocer',
-        address: '789 Eco Lane, Greenville',
+        name: 'Aaradhya Grocery Stores',
+        address: '23/A, New Sayyaji Rao Road, Chamraj Mohalla',
         discount: '10% off bulk orders',
         location: { lat: 12.9616, lng: 77.5846 } // Nearby
       },
       {
         id: '4',
-        name: 'Quick Stop Market',
-        address: '321 Fast Road, Speedy City',
-        discount: 'Buy 1 Get 1 Free',
+        name: 'Aramane Stores',
+        address: 'Temple Road, Vani Vilas Mohalla',
+        discount: 'Buy 1L Oil Get 1Kg Rava Free',
         location: { lat: 12.9516, lng: 77.5746 } // Farther
       },
       {
         id: '5',
-        name: 'Gourmet Pantry',
-        address: '654 Culinary Blvd, Foodie Town',
+        name: 'Kamalamma Stores',
+        address: '#87/A Devaraj Urs Rd',
         discount: '20% off premium items',
         location: { lat: 12.9916, lng: 77.6146 } // Farther
       },
       {
         id: '6',
-        name: 'Neighborhood Market',
-        address: '987 Community Street, Hometown',
+        name: 'Akshya Grocery Centre',
+        address: '7th Main, 3rd Stage, Gokulam',
         discount: 'Senior discount available',
         location: { lat: 12.9416, lng: 77.5646 } // Farthest
       }
@@ -88,21 +93,8 @@ const RecommendedStores = () => {
   return (
     <Container maxWidth="lg">
       <Box sx={{ my: 4 }}>
-        <Button 
-          startIcon={<ArrowBack />}
-          onClick={() => navigate(-1)}
-          sx={{ mb: 3 }}
-          variant="outlined"
-        >
-          Back to Stores
-        </Button>
-
         <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
           Stores We Recommend
-        </Typography>
-
-        <Typography variant="body1" paragraph sx={{ mb: 4 }}>
-          Here are 6 stores we recommend based on your preferences:
         </Typography>
 
         <Box sx={{ 
@@ -170,6 +162,24 @@ const RecommendedStores = () => {
                   />
                 )}
               </CardContent>
+
+              {/* Shop Now Button */}
+              <Box sx={{ p: 2, pt: 0 }}>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  startIcon={<ShoppingCart />}
+                  onClick={() => handleShopNow(store.id)}
+                  sx={{
+                    backgroundColor: '#2E7D32', // Green color
+                    '&:hover': {
+                      backgroundColor: '#1B5E20' // Darker green on hover
+                    }
+                  }}
+                >
+                  Shop Now
+                </Button>
+              </Box>
             </Card>
           ))}
         </Box>

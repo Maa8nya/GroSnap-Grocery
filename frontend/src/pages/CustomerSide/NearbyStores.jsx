@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import './fixleafleticons';
-import { db } from '../../../firebase';  // adjust path if needed
+import { db } from '../../../firebase';
 import { collection, getDocs } from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
 
 function NearbyStores() {
+  const navigate = useNavigate();
   const [location, setLocation] = useState(null);
   const [stores, setStores] = useState([]);
   const [firestoreStores, setFirestoreStores] = useState([]);
@@ -28,11 +30,9 @@ function NearbyStores() {
 
   const kmToMinutes = (km) => Math.round((km / 5) * 60);
 
-  // Fetch stores from Overpass API
-  const fetchStores = async (lat, lon) => {
+  const fetchStores = async (lat, lon, radius = 8000) => {
     setLoading(true);
     setError('');
-    const radius = 8000;
 
     const query = `
       [out:json][timeout:25];
@@ -44,8 +44,24 @@ function NearbyStores() {
     `;
 
     try {
-      const response = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
+      const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+      console.log("Fetching from Overpass:", url);
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Overpass API error: ${response.status} ${response.statusText}`);
+      }
+
       const data = await response.json();
+      console.log("Overpass raw data:", data);
+
+      if (!data.elements || data.elements.length === 0) {
+        console.warn(`No stores found within ${radius / 1000} km`);
+        if (radius === 8000) {
+          console.log("Retrying with 15 km radius...");
+          return fetchStores(lat, lon, 15000);
+        }
+      }
 
       const parsedStores = data.elements
         .map(el => {
@@ -67,13 +83,17 @@ function NearbyStores() {
 
       setStores(parsedStores);
     } catch (err) {
-      setError('Failed to fetch stores. Please try again.');
+      console.error("Error fetching Overpass data:", err);
+      if (err.message.includes("Failed to fetch")) {
+        setError("Failed to contact Overpass API. This might be a CORS or network issue.");
+      } else {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch Firestore registered stores
   const fetchRegisteredStores = async () => {
     setLoadingFirestore(true);
     setFirestoreError(null);
@@ -99,15 +119,27 @@ function NearbyStores() {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
+        console.log("User location:", latitude, longitude);
         setLocation({ lat: latitude, lon: longitude });
         fetchStores(latitude, longitude);
-        fetchRegisteredStores();  // fetch Firestore stores once location is fetched
+        fetchRegisteredStores();
       },
       (err) => {
-        setError(err.message);
+        console.error("Geolocation error:", err);
+        setError(`Location error: ${err.message}`);
         setLoading(false);
       }
     );
+  };
+
+  const handleShopNow = (storeId) => {
+    navigate('/customer/Grocery', { 
+      state: { storeId }
+    });
+  };
+
+  const handleContact = (storeId, storeName) => {
+    console.log(`Contact clicked for store ${storeName} (${storeId})`);
   };
 
   return (
@@ -115,10 +147,7 @@ function NearbyStores() {
       maxWidth: '1200px',
       margin: '0 auto',
       padding: '20px',
-      fontFamily: 'Arial, sans-serif',
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100vh'
+      fontFamily: 'Arial, sans-serif'
     }}>
       <h1 style={{ textAlign: 'center', marginBottom: '30px' }}>Nearby Stores</h1>
 
@@ -163,13 +192,12 @@ function NearbyStores() {
         <>
           <div style={{
             display: 'flex',
-            flexDirection: 'column',
-            gap: '20px'
+            gap: '20px',
+            marginBottom: '20px'
           }}>
-            {/* Map Container */}
             <div style={{
-              height: '250px',
-              width: '20%',
+              flex: '3',
+              height: '400px',
               borderRadius: '8px',
               overflow: 'hidden',
               boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
@@ -181,7 +209,7 @@ function NearbyStores() {
               >
                 <TileLayer
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  attribution='&copy; OpenStreetMap contributors'
                 />
                 <Marker position={[location.lat, location.lon]}>
                   <Popup>Your Location</Popup>
@@ -195,6 +223,21 @@ function NearbyStores() {
                         <p style={{ margin: '5px 0' }}>
                           {store.distance.toFixed(2)} km away
                         </p>
+                        <button
+                          onClick={() => handleContact(store.id, store.name)}
+                          style={{
+                            backgroundColor: '#2196F3',
+                            color: 'white',
+                            padding: '5px 10px',
+                            border: 'none',
+                            borderRadius: '4px',
+                            fontSize: '14px',
+                            cursor: 'pointer',
+                            marginTop: '5px'
+                          }}
+                        >
+                          Contact Store
+                        </button>
                       </div>
                     </Popup>
                   </Marker>
@@ -206,7 +249,21 @@ function NearbyStores() {
                         <div>
                           <h4 style={{ margin: '5px 0' }}>{store.shopName}</h4>
                           <p style={{ margin: '5px 0' }}>{store.shopAddress}</p>
-                          {/* optionally add distance */}
+                          <button
+                            onClick={() => handleShopNow(store.id)}
+                            style={{
+                              backgroundColor: '#e11d48',
+                              color: 'white',
+                              padding: '5px 10px',
+                              border: 'none',
+                              borderRadius: '4px',
+                              fontSize: '14px',
+                              cursor: 'pointer',
+                              marginTop: '5px'
+                            }}
+                          >
+                            Shop Now
+                          </button>
                         </div>
                       </Popup>
                     </Marker>
@@ -215,85 +272,132 @@ function NearbyStores() {
               </MapContainer>
             </div>
 
-            {/* Horizontal Scrollable Store Cards */}
             <div style={{
-              padding: '10px 0',
-              overflowX: 'auto',
-              whiteSpace: 'nowrap',
-              borderTop: '1px solid #ddd'
+              flex: '2',
+              backgroundColor: 'white',
+              borderRadius: '8px',
+              padding: '20px',
+              boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+              overflowY: 'auto',
+              maxHeight: '400px'
             }}>
-              <h2 style={{
-                marginBottom: '10px',
-                paddingLeft: '10px'
-              }}>
-                📍 Nearby Stores ({stores.length})
-              </h2>
-
-              {stores.length > 0 ? (
-                <div style={{
-                  display: 'flex',
-                  gap: '15px',
-                  padding: '10px',
-                  minHeight: '150px'
-                }}>
-                  {stores.map(store => (
-                    <div key={store.id} style={{
-                      minWidth: '220px',
-                      backgroundColor: 'white',
-                      borderRadius: '8px',
-                      padding: '15px',
-                      boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
-                      display: 'inline-block',
-                      whiteSpace: 'normal'
-                    }}>
-                      <h3 style={{ margin: '0 0 5px', color: '#2E7D32' }}>{store.name}</h3>
-                      <p style={{ margin: '5px 0', color: '#555' }}>{store.type}</p>
-                      <p style={{ margin: '5px 0' }}>🚶‍♂️ ~{kmToMinutes(store.distance)} min</p>
-                      <p style={{ margin: '0', fontWeight: 'bold' }}>{store.distance.toFixed(2)} km</p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div style={{
-                  backgroundColor: '#E3F2FD',
-                  padding: '20px',
-                  borderRadius: '8px',
-                  textAlign: 'center'
-                }}>
-                  <p style={{ margin: 0 }}>No stores found in your area.</p>
-                </div>
-              )}
-
-              {/* Firestore registered stores list */}
-              <h2 style={{ marginTop: 30, paddingLeft: 10 }}>
+              <h2 style={{ marginTop: 0, marginBottom: '20px', color: '#2E7D32' }}>
                 🏪 Registered Stores ({firestoreStores.length})
               </h2>
+              
               {loadingFirestore && <p>Loading registered stores...</p>}
-              {!loadingFirestore && firestoreStores.length === 0 && <p>No registered stores found.</p>}
+              {!loadingFirestore && firestoreStores.length === 0 && (
+                <p style={{ color: '#666' }}>No registered stores found in your area.</p>
+              )}
+              
               {!loadingFirestore && firestoreStores.length > 0 && (
                 <div style={{
                   display: 'flex',
-                  gap: '15px',
-                  padding: '10px',
-                  overflowX: 'auto'
+                  flexDirection: 'column',
+                  gap: '15px'
                 }}>
                   {firestoreStores.map(store => (
                     <div key={store.id} style={{
-                      minWidth: '220px',
-                      backgroundColor: 'white',
-                      borderRadius: '8px',
+                      backgroundColor: '#f5f5f5',
+                      borderRadius: '6px',
                       padding: '15px',
-                      boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
-                      display: 'inline-block',
-                      whiteSpace: 'normal'
+                      borderLeft: '4px solid #4CAF50'
                     }}>
                       <h3 style={{ margin: '0 0 5px', color: '#2E7D32' }}>{store.shopName}</h3>
                       <p style={{ margin: '5px 0', color: '#555' }}>{store.shopAddress}</p>
+                      {store.latitude && store.longitude && (
+                        <p style={{ margin: '5px 0', fontSize: '14px', color: '#666' }}>
+                          📍 {getDistance(location.lat, location.lon, store.latitude, store.longitude).toFixed(2)} km away
+                        </p>
+                      )}
+                      <button
+                        onClick={() => handleShopNow(store.id)}
+                        style={{
+                          backgroundColor: '#e11d48',
+                          color: 'white',
+                          padding: '8px 16px',
+                          border: 'none',
+                          borderRadius: '4px',
+                          fontSize: '14px',
+                          cursor: 'pointer',
+                          marginTop: '10px',
+                          width: '100%',
+                          transition: 'background-color 0.3s',
+                          ':hover': {
+                            backgroundColor: '#be123c'
+                          }
+                        }}
+                      >
+                        🛒 Shop Now
+                      </button>
                     </div>
                   ))}
                 </div>
               )}
             </div>
+          </div>
+
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            padding: '20px',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+          }}>
+            <h2 style={{ marginTop: 0, marginBottom: '20px', color: '#2E7D32' }}>
+              📍 Nearby Stores ({stores.length})
+            </h2>
+            
+            {stores.length > 0 ? (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+                gap: '15px'
+              }}>
+                {stores.map(store => (
+                  <div key={store.id} style={{
+                    backgroundColor: '#f5f5f5',
+                    borderRadius: '6px',
+                    padding: '15px',
+                    borderLeft: '4px solid #2196F3'
+                  }}>
+                    <h3 style={{ margin: '0 0 5px', color: '#1565C0' }}>{store.name}</h3>
+                    <p style={{ margin: '5px 0', color: '#555' }}>{store.type}</p>
+                    <p style={{ margin: '5px 0' }}>
+                      🚶‍♂️ ~{kmToMinutes(store.distance)} min ({store.distance.toFixed(2)} km)
+                    </p>
+                    <button
+                      onClick={() => handleContact(store.id, store.name)}
+                      style={{
+                        backgroundColor: '#2196F3',
+                        color: 'white',
+                        padding: '8px 16px',
+                        border: 'none',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        cursor: 'pointer',
+                        marginTop: '10px',
+                        width: '100%',
+                        transition: 'background-color 0.3s',
+                        ':hover': {
+                          backgroundColor: '#0b7dda'
+                        }
+                      }}
+                    >
+                      📞 Contact
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{
+                backgroundColor: '#E3F2FD',
+                padding: '20px',
+                borderRadius: '8px',
+                textAlign: 'center'
+              }}>
+                <p style={{ margin: 0 }}>No stores found in your area.</p>
+              </div>
+            )}
           </div>
         </>
       )}
