@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { 
   Box, 
   Typography, 
@@ -64,17 +65,19 @@ const Cart = () => {
               ))}
             </List>
             <Button
-              variant="contained"
-              fullWidth
-              sx={{
-                backgroundColor: theme.secondary,
-                "&:hover": { backgroundColor: "#E64A19" },
-                py: 1.5,
-                fontSize: "1.1rem"
-              }}
-            >
-              Proceed to Checkout
-            </Button>
+  variant="contained"
+  fullWidth
+  component={Link} 
+  to="/customer/OrderPlaced"
+  sx={{
+    backgroundColor: theme.secondary,
+    "&:hover": { backgroundColor: "#E64A19" },
+    py: 1.5,
+    fontSize: "1.1rem"
+  }}
+>
+  Proceed to Checkout
+</Button>
           </>
         )}
       </Box>

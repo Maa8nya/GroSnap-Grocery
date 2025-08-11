@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { ArrowBack, ShoppingCart, Person } from "@mui/icons-material";
 import { 
   Box, 
   Typography, 
@@ -11,21 +13,23 @@ import {
   IconButton,
   Divider,
   InputBase,
-  Paper
+  Paper,
+  Badge
 } from "@mui/material";
 import { 
   ShoppingBasket, 
   LocalGroceryStore, 
   Kitchen, 
   BreakfastDining, 
-  ShoppingCart, 
-  Person,
   Search,
   DeliveryDining
 } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 
 const GroceryCategories = () => {
   const [selectedCategory, setSelectedCategory] = useState("Fresh Vegetables");
+  const [cartItems, setCartItems] = useState([]);
+  const navigate = useNavigate();
 
   // Customer theme colors
   const theme = {
@@ -77,29 +81,62 @@ const GroceryCategories = () => {
   ];
 
   const snackCategories = [
-    "Biscuits & Cookies", 
-    "Chips & Crisps", 
-    "Soft Drinks", 
-    "Juices",
-    "Chocolates",
-    "Nuts & Dry Fruits"
+    { name: "Biscuits & Cookies", offer: "10% off on premium brands" },
+    { name: "Chips & Crisps", offer: "Buy 2 get 1 free" },
+    { name: "Soft Drinks", offer: "Combo offers available" },
+    { name: "Juices", offer: "Fresh juices discount" },
+    { name: "Chocolates", offer: "Valentine special offers" },
+    { name: "Nuts & Dry Fruits", offer: "Buy in bulk and save" }
   ];
+
+  const popularProducts = [
+    { name: "Organic Honey", offer: "20% off this week" },
+    { name: "Premium Coffee", offer: "Buy 2 get 10% off" },
+    { name: "Green Tea", offer: "Antioxidant rich" },
+    { name: "Protein Bars", offer: "High protein snack" }
+  ];
+
+  const handleAddToCart = (productName) => {
+    setCartItems(prevItems => {
+      const existingItem = prevItems.find(item => item.name === productName);
+      if (existingItem) {
+        return prevItems.map(item =>
+          item.name === productName 
+            ? { ...item, quantity: item.quantity + 1 } 
+            : item
+        );
+      }
+      return [...prevItems, { name: productName, quantity: 1 }];
+    });
+    navigate('/Customer/cart');
+  };
+
+  const getTotalItems = () => {
+    return cartItems.reduce((total, item) => total + item.quantity, 0);
+  };
 
   return (
     <Box sx={{ backgroundColor: theme.background, minHeight: "100vh" }}>
       {/* Grosnap Navbar */}
       <AppBar position="static" sx={{ backgroundColor: theme.primary }}>
         <Toolbar>
-          
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: "bold" }}>
-            GROSNAP
-          </Typography>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <IconButton color="inherit" onClick={() => window.history.back()}>
+              <ArrowBack />
+            </IconButton>
+          </motion.div>
+          <motion.div whileHover={{ rotate: 5 }} transition={{ type: "spring", stiffness: 300 }}>
+            <img src="/logo.png" alt="GroSnap Logo" style={{ height: '48px', marginLeft: '8px' }} />
+          </motion.div>
+          <Box sx={{ flexGrow: 1 }} />
           <Box sx={{ display: "flex", gap: 1 }}>
             <IconButton color="inherit">
               <Person />
             </IconButton>
-            <IconButton color="inherit">
-              <ShoppingCart />
+            <IconButton color="inherit" onClick={() => navigate('/cart')}>
+              <Badge badgeContent={getTotalItems()} color="error">
+                <ShoppingCart />
+              </Badge>
             </IconButton>
           </Box>
         </Toolbar>
@@ -241,12 +278,13 @@ const GroceryCategories = () => {
                         variant="contained"
                         size="small"
                         startIcon={<ShoppingBasket />}
+                        onClick={() => handleAddToCart(product)}
                         sx={{ 
                           mt: 1,
                           backgroundColor: theme.secondary,
                           borderRadius: 2,
                           "&:hover": {
-                            backgroundColor: "#E64A19" // Darker orange
+                            backgroundColor: "#E64A19"
                           }
                         }}
                       >
@@ -273,40 +311,46 @@ const GroceryCategories = () => {
         </Typography>
         <Grid container spacing={2} sx={{ mb: 4 }}>
           {snackCategories.map((item) => (
-            <Grid item xs={6} sm={4} md={3} key={item}>
+            <Grid item xs={6} sm={4} md={3} key={item.name}>
               <Card sx={{
                 borderRadius: 2,
                 boxShadow: 1,
                 "&:hover": {
-                  backgroundColor: theme.primary,
-                  color: "white",
                   transform: "translateY(-2px)",
-                  boxShadow: 3,
-                  "& .MuiTypography-root": {
-                    color: "white"
-                  }
+                  boxShadow: 3
                 },
                 transition: "all 0.3s ease"
               }}>
                 <CardContent sx={{ textAlign: "center" }}>
                   <Typography variant="subtitle1" sx={{ 
                     color: theme.text,
-                    fontWeight: "bold"
+                    fontWeight: "bold",
+                    mb: 1
                   }}>
-                    {item}
+                    {item.name}
                   </Typography>
                   <Typography variant="body2" sx={{ 
-                    mt: 1,
                     color: theme.secondary,
-                    fontSize: "0.75rem"
+                    fontSize: "0.75rem",
+                    mb: 1
                   }}>
-                    {item.includes("Biscuits") ? "10% off on premium brands" : 
-                     item.includes("Chips") ? "Buy 2 get 1 free" :
-                     item.includes("Drinks") ? "Combo offers available" :
-                     item.includes("Juices") ? "Fresh juices discount" :
-                     item.includes("Chocolates") ? "Valentine special offers" :
-                     "Buy in bulk and save"}
+                    {item.offer}
                   </Typography>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    startIcon={<ShoppingBasket />}
+                    onClick={() => handleAddToCart(item.name)}
+                    sx={{ 
+                      backgroundColor: theme.secondary,
+                      borderRadius: 2,
+                      "&:hover": {
+                        backgroundColor: "#E64A19"
+                      }
+                    }}
+                  >
+                    Add to Cart
+                  </Button>
                 </CardContent>
               </Card>
             </Grid>
@@ -328,8 +372,8 @@ const GroceryCategories = () => {
           POPULAR PRODUCTS
         </Typography>
         <Grid container spacing={2}>
-          {["Organic Honey", "Premium Coffee", "Green Tea", "Protein Bars"].map((product) => (
-            <Grid item xs={6} sm={3} key={product}>
+          {popularProducts.map((product) => (
+            <Grid item xs={6} sm={3} key={product.name}>
               <Card sx={{
                 borderRadius: 2,
                 boxShadow: 1,
@@ -342,24 +386,23 @@ const GroceryCategories = () => {
                 <CardContent sx={{ textAlign: "center" }}>
                   <Typography variant="subtitle1" sx={{ 
                     fontWeight: "bold",
-                    color: theme.primary
+                    color: theme.primary,
+                    mb: 1
                   }}>
-                    {product}
+                    {product.name}
                   </Typography>
                   <Typography variant="body2" sx={{ 
                     color: theme.secondary,
                     mb: 1,
                     fontSize: "0.75rem"
                   }}>
-                    {product.includes("Honey") ? "20% off this week" :
-                     product.includes("Coffee") ? "Buy 2 get 10% off" :
-                     product.includes("Tea") ? "Antioxidant rich" :
-                     "High protein snack"}
+                    {product.offer}
                   </Typography>
                   <Button
                     variant="contained"
                     size="small"
                     startIcon={<ShoppingBasket />}
+                    onClick={() => handleAddToCart(product.name)}
                     sx={{ 
                       backgroundColor: theme.secondary,
                       borderRadius: 2,
