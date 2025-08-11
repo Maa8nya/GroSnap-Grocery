@@ -528,5 +528,5 @@ li {
 const styleElement = document.createElement('style');
 styleElement.innerHTML = styles;
 document.head.appendChild(styleElement);
-
+//hope this works
 export default OCRUpload;
