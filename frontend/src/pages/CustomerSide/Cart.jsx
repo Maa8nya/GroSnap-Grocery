@@ -83,7 +83,7 @@ const Cart = () => {
     const shopkeeperPhone = "919876543210"; // Shopkeeper WhatsApp number
 
     // Customer notification
-    const customerMsg = `Thank you for your order!%0A%0AOrder ID: ${order.id}%0ADate: ${order.date}%0ATotal: ₹${order.total}%0A%0AWe'll notify you when your order is ready.`;
+    const customerMsg = `An order has been placed please check you dashboard!%0A%0AOrder ID: ${order.id}%0ADate: ${order.date}%0ATotal: ₹${order.total}%0A%0AContact the Customer when Order is ready!`;
     window.open(`https://wa.me/${customerPhone}?text=${customerMsg}`, '_blank');
 
     // Shopkeeper notification

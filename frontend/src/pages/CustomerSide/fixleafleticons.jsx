@@ -11,13 +11,13 @@ L.Icon.Default.mergeOptions({
   iconRetinaUrl: markerIcon2x,
   iconUrl: markerIcon,
   shadowUrl: markerShadow,
-  iconSize: [25, 41],    // Size of the icon
-  iconAnchor: [12, 41],  // Point of the icon which will correspond to marker's location
-  popupAnchor: [1, -34], // Point from which the popup should open relative to the iconAnchor
-  shadowSize: [41, 41]   // Size of the shadow
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
 });
 
-// Custom icon configuration
+// Custom icon for Firestore-registered stores
 export const customIcon = new L.Icon({
   iconUrl: markerIcon,
   iconRetinaUrl: markerIcon2x,
@@ -29,7 +29,7 @@ export const customIcon = new L.Icon({
   className: 'leaflet-custom-icon'
 });
 
-// Custom icon for user location
+// Custom icon for user location (blue)
 export const userLocationIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
   iconRetinaUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
@@ -41,7 +41,7 @@ export const userLocationIcon = new L.Icon({
   className: 'leaflet-user-icon'
 });
 
-// Custom icon for stores
+// Custom icon for Overpass API stores (red)
 export const storeIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
   iconRetinaUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
@@ -53,18 +53,18 @@ export const storeIcon = new L.Icon({
   className: 'leaflet-store-icon'
 });
 
-// Add CSS to prevent icon blurring
+// Fix CSS blurring and ensure 100% map sizing
 const style = document.createElement('style');
 style.textContent = `
   .leaflet-custom-icon,
   .leaflet-user-icon,
   .leaflet-store-icon {
     filter: none !important;
-  .leaflet-container {
-  height: 100%;
-  width: 100%;
-}
+  }
 
+  .leaflet-container {
+    height: 100%;
+    width: 100%;
   }
 `;
 document.head.appendChild(style);
